@@ -11,6 +11,8 @@ The Server program is built in the [Zig](https://ziglang.org/) language, for its
 
 The Client program is built in a yet tbd language (selection determined to be likely Typescript).
 
+Progress and project guideline can be found on the [Trello Board here](https://trello.com/b/16MHQEvr/praxeoldb). 
+
 &nbsp;
 
 The Server:
