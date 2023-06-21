@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      #- name: locale Zig
-      #  run: apt-get -y install zig
+      - name: locale Zig
+        run: apt-get -y install zig
       - name: Build with Zig
         run: zig build
