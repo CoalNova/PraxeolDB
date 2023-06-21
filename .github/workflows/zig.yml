@@ -12,6 +12,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: locale Zig
-        run: sudo apt-get -y install zig
+        run: snap install zig --classic --beta
       - name: Build with Zig
         run: zig build
