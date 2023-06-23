@@ -14,6 +14,11 @@ pub fn build(b: *std.Build) void {
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall. Here we do not
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
+    
+    const zap = b.dependency("zap", .{
+        .target = target,
+        .optimize = optimize,
+    });
 
     const exe = b.addExecutable(.{
         .name = "PraxeolDB",
@@ -23,6 +28,10 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    exe.addModule("zap", zap.module("zap"));
+    exe.linkSystemLibrary("c");
+    exe.linkSystemLibrary("sqlite3");
+    exe.linkLibrary(zap.artifact("facil.io"));
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
@@ -59,6 +68,10 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+
+    unit_tests.linkLibC();
+    unit_tests.linkSystemLibrary("c");
+    unit_tests.linkSystemLibrary("sqlite3");
 
     const run_unit_tests = b.addRunArtifact(unit_tests);
 
