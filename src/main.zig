@@ -6,12 +6,15 @@ const stc = @import("staticutils.zig");
 
 pub fn main() !void {
 
-    try server.init(std.net.Address.initIp4([_]u8{127,0,0,1}, 8080));
+    //MEBE load separately for now in case it needs something special
+    stc.loadConfigurationFile();
+
+    try server.init();
     defer server.deinit();
 
     try server.proc();
 
-    try stc.bw.flush(); // don't forget to flush!
+    try stc.bw.flush(); // Also wash your hands after.
 }
 
 test "sqlite3 open failure" 

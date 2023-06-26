@@ -1,3 +1,9 @@
+node_modules/
+dist/
 zig-cache/
 zig-out/
+.vscode/
+.idea/
+
 *._db
+*.env*
