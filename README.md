@@ -10,7 +10,17 @@ The study of human action and conduct, based on the notion that humans engage in
 
 PraxeolDB is an in-development twin program solution for asset management and ordering system designed for small impact and wide adoptability. It is designed for small or independant operations as a method of simple inventory requisition by multiple users. PraxeolDB is designed to use as few system resources as it can to achieve its goal.
 
-Progress and project guideline can be found on the [Trello Board here](https://trello.com/b/16MHQEvr/praxeoldb). Version numbering is `MajorRelease.PhaseCompletion.ProgressIncrementor_optionallettersuffix`. Suffixes are a : text or other adjustment with no change to code, n : program does not run in the build, x : code does not compile. Suffixes are used springly. Phase number denotes what phase has been completed.
+Progress and project guideline can be found on the [Trello Board here](https://trello.com/b/16MHQEvr/praxeoldb). 
+
+Version numbering is: `MajorRelease.PhaseCompletion.ProgressIncrementor_optionallettersuffix` 
+
+|suffix|description|
+|-|-|
+| a.. | text or other adjustment with no change to code |
+| n | program does not run in the build |
+| x | code does not compile |
+
+Suffixes are used springly. Phase number denotes which phase has been completed.
 
 &nbsp;
 
