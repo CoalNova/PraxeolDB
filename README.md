@@ -40,8 +40,17 @@ The hardware spec targeted for the server is any run-of-the-mill office workstat
 
 The Client:
 ---
-A simple, clean, and most of all lite interface. It will facilitate the requesition of inventory items and supplies. It will also allow for administrative and semi-administrative editing of user, site, and inventory information. The layout should focus on a clear, readable, and organically laid out interface.
+The PraxeolDB client uses [TypeScript](https://www.typescriptlang.org/) language for distribution over web connections. It will also allow for standalone execution, though configuration through application interface will be necessary to know which "home" to phone.
 
-Research is being performed on achieving desired results. 
+A simple, clean, and most of all lite interface. It will facilitate the requesition of inventory items and supplies. It will also allow for administrative and semi-administrative editing of user, site, and inventory information. The layout should focus on a clear, readable, and organically laid out interface. It uses [Bun](https://bun.sh/) as the TypeScript compiler.
 
-The hardware spec for the client is an android we browser for a low-mid range android tablet, details TBD.
+The hardware spec for the client is an android we browser for a low to mid range android tablet, details TBD.
+
+
+Building:
+---
+
+Current requirements are [Zig](https://ziglang.org/) and [Bun](https://bun.sh/).
+
+For building on Windows, either use the provided `build.bat`, or `build.sh` through a configured [MSYS2](https://www.msys2.org/) (or other such utility).
+For Linux, use the build script file `build.sh`.

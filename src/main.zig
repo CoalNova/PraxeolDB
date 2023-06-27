@@ -9,6 +9,8 @@ pub fn main() !void {
     //MEBE load separately for now in case it needs something special
     stc.loadConfigurationFile();
 
+    try server.establish();
+
     try server.init();
     defer server.deinit();
 

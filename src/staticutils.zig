@@ -2,6 +2,8 @@
 //! position. Any const value will be thread safe, should multithreading be
 //! desired.
 const std = @import("std");
+pub const app_embed = @embedFile("./buildassets/app.js");
+pub const ico_embed = @embedFile("./buildassets/favicon.ico");
 
 /// Configuration settings struct for server 
 pub const ServerConfig = struct{
@@ -19,14 +21,15 @@ pub const config_path = "./prxconfig.ini";
 pub const default_web_port = 8080;
 pub const default_app_port = 9864;
 
-/// Path to default HTML landing page file.
-/// Null is use internal.
-pub const landing_page_path : ?[]const u8 = null;
-
 /// Internal landing page
 pub const default_landing_body = "<html><body><h1>HTTP ERROR 404</h1> " ++
     "This page was reached in error, please insure configuration correctness " ++
     "or remove/delete configuration file to set settings to default.</body></html>";
+
+/// The default index.html, the application should overwrite the text body to allow for 
+pub const index_html = "<!DOCTYPE html>\n<html>\n\t<head>\t\t<title>Welcome to PraxeolDB</title>" ++
+    "\n\t</head>\n\t<body>\n\t\t<h1>Welcome to PraxeolDB</h1>\n\t\t<p>The server is not yet implemented.</p>" ++ 
+    "\n\t\t<script src=\"app.js\"></script>\n\t</body>\n</html>";
 
 /// Allocator
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -36,7 +39,6 @@ pub const allocator = gpa.allocator();
 const stdout_file = std.io.getStdOut().writer();
 pub var bw = std.io.bufferedWriter(stdout_file);
 pub const stdout = bw.writer();
-
 
 pub var buffer = [_]u8{0} ** 1024;
 

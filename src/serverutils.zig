@@ -52,3 +52,48 @@ pub fn deinit() void{
     
 }
 
+/// Establishes files in current directory if they don't already exist 
+pub fn establish() !void
+{
+    const fs = std.fs;
+    const cwd = fs.cwd();
+
+    cwd.access("./PraxeolDB.config", .{}) catch |err|
+    {
+        if (err == fs.Dir.OpenError.FileNotFound) {
+            var file = try cwd.createFile("./PraxeolDB.config", .{});
+            defer file.close();
+            _ = try file.write(stc.app_embed);
+        }
+    };
+
+    cwd.access("./app.js", .{}) catch |err|
+    {
+        if (err == fs.Dir.OpenError.FileNotFound) {
+            var file = try cwd.createFile("./app.js", .{});
+            defer file.close();
+            _ = try file.write(stc.app_embed);
+        }
+        else return err;
+    };
+
+    cwd.access("./favicon.ico", .{}) catch |err|
+    {
+        if (err == fs.Dir.OpenError.FileNotFound) {
+            var file = try cwd.createFile("./favicon.ico", .{});
+            defer file.close();
+            _ = try file.write(stc.ico_embed);
+        }
+        else return err;
+    };
+
+    cwd.access("./index.html", .{}) catch |err|
+    {
+        if (err == fs.Dir.OpenError.FileNotFound) {
+            var file = try cwd.createFile("./index.html", .{});
+            defer file.close();
+            _ = try file.write(stc.index_html);
+        }
+        else return err;
+    };
+}
