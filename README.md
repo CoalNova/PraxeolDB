@@ -60,7 +60,7 @@ The hardware spec for the client is an android we browser for a low to mid range
 Building:
 ---
 
-Current requirements are [Zig](https://ziglang.org/) and [Bun](https://bun.sh/).
+Current requirements are [Zig](https://ziglang.org/) and [Bun](https://bun.sh/), and utilizes the sqlite3 libc system library.
 
 For building on Windows, either use the provided `build.bat`, or `build.sh` through a configured [MSYS2](https://www.msys2.org/) (or other such utility).
 For Linux, use the build script file `build.sh`.

@@ -1,12 +1,15 @@
 
 # build typescrypt files
-bun build ./src/app/*.ts --outfile ./src/buildassets/app.js
+bun build ./clientsrc/*.ts --outfile ./serversrc/buildassets/app.js
 
 # Ancillary 
-cp ./assets/favicon.ico ./src/buildassets/favicon.ico
+cp ./assets/favicon.ico ./serversrc/buildassets/favicon.ico
 
 # build zig
 zig build -Doptimize=ReleaseSafe
 
+# move built exe to current
+cp ./zig-out/bin/PraxeolDB ./PraxeolDB
+
 # clean
-rm ./src/buildassets/*
+rm ./serversrc/buildassets/*

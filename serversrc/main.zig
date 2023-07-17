@@ -1,8 +1,8 @@
 const std = @import("std");
-const server = @import("serverutils.zig");
-const sql_utils = @import("sqlutils.zig");
+const server = @import("server/serverutils.zig");
+const sql_utils = @import("server/sqlutils.zig");
 const sql = sql_utils.sql_3;
-const stc = @import("staticutils.zig");
+const stc = @import("server/staticutils.zig");
 
 pub fn main() !void {
 
@@ -19,10 +19,8 @@ pub fn main() !void {
     try stc.bw.flush(); // Also wash your hands after.
 }
 
-test "sqlite3 open failure" 
-{
-    var db : ?*sql.sqlite3 = undefined;
+test "sqlite3 open failure" {
+    var db: ?*sql.sqlite3 = undefined;
     var result = sql.sqlite3_open("nofile._db", &db);
     std.debug.assert(result == 0);
 }
-
