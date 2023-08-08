@@ -2,18 +2,43 @@ const std = @import("std");
 const sql = @import("sqlutils.zig");
 const zap = @import("zap");
 const stc = @import("staticutils.zig");
+const wst = zap.WebSockets;
 
 /// Basic example impl of a simple http fulfiller?
 fn onWebMinimal(r: zap.SimpleRequest) void {
-    if (r.path) |the_path|
-        std.debug.print("PATH: {s}\n", .{the_path});
-    r.setStatus(.not_found);
+    _ = stc.bw.write("HELLO DAVE\n") catch return;
+    std.debug.print("HELLO DAVE\n", .{});
+    r.setHeader("Content-Type", "text/plain") catch unreachable;
+
+    r.setStatus(.ok);
     r.sendBody(stc.server_config.landing_body) catch return;
 }
 
 /// Handler for incoming requests
 fn onAppRequest(r: zap.SimpleRequest) void {
-    r.sendBody("hiya") catch return;
+    r.setHeader("Access-Control-Allow-Origin", stc.server_config.hostname) catch unreachable;
+    r.setHeader("Access-Control-Allow-Headers", "*") catch unreachable;
+    r.setHeader("Access-Control-Allow-Methods", "OPTIONS,POST,GET") catch unreachable;
+    r.setHeader("Content-Type", "application/json") catch unreachable;
+
+    std.debug.print("We got client app!\n", .{});
+    if (r.path) |the_path|
+        std.debug.print("APP: {s}\n", .{the_path});
+    r.setStatus(.ok);
+    if (r.path != null) std.debug.print("path: {s}\n", .{r.path.?});
+    if (r.query != null) std.debug.print("query: {s}\n", .{r.query.?});
+    if (r.body != null) {
+        std.debug.print("Client says: {s}\n", .{r.body.?});
+        if (std.mem.eql(u8, r.body.?, "Hello")) {
+            r.setStatus(.ok);
+            r.sendBody("Hello!") catch unreachable;
+            return;
+        }
+    }
+    if (r.method != null) std.debug.print("method: {s}\n", .{r.method.?});
+
+    r.setStatus(.ok);
+    r.sendBody(stc.server_config.landing_body) catch return;
 }
 
 /// Initilalizes the HTTP fulfilment and SQL server to accept incoming requests
@@ -22,17 +47,23 @@ pub fn init() !void {
     var web_face = zap.SimpleHttpListener.init(.{
         .port = stc.server_config.web_port,
         .on_request = onWebMinimal,
-        .public_folder = "./",
+        .public_folder = stc.server_config.data_path,
         .log = true,
         .max_clients = 100000,
+        .max_body_size = 2048,
     });
 
-    var app_face = zap.SimpleHttpListener.init(.{
-        .port = stc.server_config.app_port,
-        .on_request = onAppRequest,
-        .log = true,
-        .max_clients = 100000,
-    });
+    //appfacing
+    var app_face = zap.SimpleEndpointListener.init(
+        stc.allocator,
+        .{
+            .port = stc.server_config.app_port,
+            .on_request = onAppRequest,
+            .log = true,
+            .max_clients = 100000,
+            .max_body_size = 2048,
+        },
+    );
 
     try web_face.listen();
     try app_face.listen();
@@ -52,37 +83,37 @@ pub fn establish() !void {
     const fs = std.fs;
     const cwd = fs.cwd();
 
-    cwd.access("./PraxeolDB.config", .{}) catch |err|
+    cwd.access(stc.server_config.config_path, .{}) catch |err|
         {
         if (err == fs.Dir.OpenError.FileNotFound) {
-            var file = try cwd.createFile("./PraxeolDB.config", .{});
+            var file = try cwd.createFile(stc.server_config.config_path, .{});
             defer file.close();
             _ = try file.write(stc.app_embed);
         }
     };
 
-    cwd.access("./app.js", .{}) catch |err|
+    cwd.access(stc.server_config.js_path, .{}) catch |err|
         {
         if (err == fs.Dir.OpenError.FileNotFound) {
-            var file = try cwd.createFile("./app.js", .{});
+            var file = try cwd.createFile(stc.server_config.js_path, .{});
             defer file.close();
             _ = try file.write(stc.app_embed);
         } else return err;
     };
 
-    cwd.access("./favicon.ico", .{}) catch |err|
+    cwd.access(stc.server_config.fvcn_path, .{}) catch |err|
         {
         if (err == fs.Dir.OpenError.FileNotFound) {
-            var file = try cwd.createFile("./favicon.ico", .{});
+            var file = try cwd.createFile(stc.server_config.fvcn_path, .{});
             defer file.close();
             _ = try file.write(stc.ico_embed);
         } else return err;
     };
 
-    cwd.access("./index.html", .{}) catch |err|
+    cwd.access(stc.server_config.html_path, .{}) catch |err|
         {
         if (err == fs.Dir.OpenError.FileNotFound) {
-            var file = try cwd.createFile("./index.html", .{});
+            var file = try cwd.createFile(stc.server_config.html_path, .{});
             defer file.close();
             _ = try file.write(stc.index_html);
         } else return err;

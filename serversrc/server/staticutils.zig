@@ -9,16 +9,25 @@ pub const ico_embed = @embedFile("../buildassets/favicon.ico");
 pub const ServerConfig = struct {
     web_port: u16 = default_web_port,
     app_port: u16 = default_app_port,
+    config_path: []const u8 = default_config_path,
     db_path: []const u8 = default_db_path,
+    js_path: []const u8 = default_js_path,
+    html_path: []const u8 = default_html_path,
+    fvcn_path: []const u8 = default_fvcn_path,
+    data_path: []const u8 = default_data_path,
     landing_body: []const u8 = default_landing_body,
+    hostname: []const u8 = "*", //TODO catch configured hostname
 };
 
 pub var server_config: ServerConfig = undefined;
 
 /// Config file path
-pub const config_path = "./prxconfig.ini";
-
-pub const default_db_path = "./praxeol.db";
+pub const default_data_path = "./";
+pub const default_config_path = default_data_path ++ "praxeol.cfg";
+pub const default_db_path = default_data_path ++ "praxeol.db";
+pub const default_js_path = default_data_path ++ "app.js";
+pub const default_html_path = default_data_path ++ "index.html";
+pub const default_fvcn_path = default_data_path ++ "favicon.ico";
 
 /// Default port value, intercepted and changed by config during startup
 pub const default_web_port = 8080;
@@ -47,12 +56,20 @@ pub var buffer = [_]u8{0} ** 1024;
 
 /// Loads configuration file or
 pub fn loadConfigurationFile() void {
+
     //if config not found, create one with default values
     std.debug.print("not yet implemented\n", .{});
+    createConfigurationFile();
     server_config = ServerConfig{};
 }
 
-pub fn createConfigurationFile() void {}
+pub fn createConfigurationFile() void {
+    std.fs.cwd().makePath("./praxeoldata") catch |err|
+        return std.debug.print("Folder creation error: {!}\n", .{err});
+    var file = std.fs.cwd().createFile(default_config_path, .{}) catch |err|
+        return std.debug.print("Config creation error: {!}\n", .{err});
+    defer file.close();
+}
 
 pub const table_init_user_data =
     "CREATE TABLE USER_DATA( " ++
@@ -64,6 +81,7 @@ pub const table_init_user_data =
     "firstname  TEXT NOT NULL, " ++
     "lastname   TEXT NOT NULL, " ++
     "email      TEXT NOT NULL, " ++
+    "phone      TEXT NOT NULL, " ++
     "PRIMARY KEY (user_id), " ++
     "FOREIGN KEY (site_id) REFERENCES" ++
     "   SITE_DATA(site_id)" ++
