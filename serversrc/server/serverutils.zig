@@ -10,7 +10,12 @@ fn onWebMinimal(r: zap.SimpleRequest) void {
     std.debug.print("HELLO DAVE\n", .{});
     r.setHeader("Content-Type", "text/plain") catch unreachable;
 
-    r.setStatus(.ok);
+    if (r.method != null and r.path != null)
+        if (std.mem.eql(u8, r.method.?, "GET") and std.mem.eql(u8, r.path.?, "/")) {
+            r.setStatus(.ok);
+            r.sendBody(stc.web_embed) catch return;
+        };
+    r.setStatus(.not_found);
     r.sendBody(stc.server_config.landing_body) catch return;
 }
 
@@ -19,26 +24,27 @@ fn onAppRequest(r: zap.SimpleRequest) void {
     r.setHeader("Access-Control-Allow-Origin", stc.server_config.hostname) catch unreachable;
     r.setHeader("Access-Control-Allow-Headers", "*") catch unreachable;
     r.setHeader("Access-Control-Allow-Methods", "OPTIONS,POST,GET") catch unreachable;
-    r.setHeader("Content-Type", "application/json") catch unreachable;
 
     std.debug.print("We got client app!\n", .{});
     if (r.path) |the_path|
         std.debug.print("APP: {s}\n", .{the_path});
-    r.setStatus(.ok);
-    if (r.path != null) std.debug.print("path: {s}\n", .{r.path.?});
-    if (r.query != null) std.debug.print("query: {s}\n", .{r.query.?});
+    std.debug.print("path: {s}\n", .{if (r.path == null) "null" else r.path.?});
+    std.debug.print("query: {s}\n", .{if (r.query == null) "null" else r.query.?});
+    std.debug.print("body: {s}\n", .{if (r.body == null) "null" else r.body.?});
+    std.debug.print("method: {s}\n", .{if (r.method == null) "null" else r.method.?});
+
     if (r.body != null) {
-        std.debug.print("Client says: {s}\n", .{r.body.?});
+        r.setHeader("Content-Type", "application/json") catch unreachable;
         if (std.mem.eql(u8, r.body.?, "Hello")) {
             r.setStatus(.ok);
             r.sendBody("Hello!") catch unreachable;
             return;
         }
     }
-    if (r.method != null) std.debug.print("method: {s}\n", .{r.method.?});
 
+    r.setHeader("Content-Type", "plain/text") catch unreachable;
     r.setStatus(.ok);
-    r.sendBody(stc.server_config.landing_body) catch return;
+    r.sendBody("Shoo!") catch unreachable;
 }
 
 /// Initilalizes the HTTP fulfilment and SQL server to accept incoming requests
@@ -70,6 +76,7 @@ pub fn init() !void {
 
     sql.loadDB();
     zap.start(.{ .threads = 2, .workers = 2 });
+    std.debug.print("Hullo to all\n", .{});
 }
 
 /// Processes requests

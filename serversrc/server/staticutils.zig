@@ -4,6 +4,7 @@
 const std = @import("std");
 pub const app_embed = @embedFile("../buildassets/app.js");
 pub const ico_embed = @embedFile("../buildassets/favicon.ico");
+pub const web_embed = @embedFile("../buildassets/index.html");
 
 /// Configuration settings struct for server
 pub const ServerConfig = struct {
@@ -38,10 +39,8 @@ pub const default_landing_body = "<html><body><h1>HTTP ERROR 404</h1> " ++
     "This page was reached in error, please insure configuration correctness " ++
     "or remove/delete configuration file to set settings to default.</body></html>";
 
-/// The default index.html, the application should overwrite the text body to allow for
-pub const index_html = "<!DOCTYPE html>\n<html>\n\t<head>\t\t<title>Welcome to PraxeolDB</title>" ++
-    "\n\t</head>\n\t<body>\n\t\t<h1>Welcome to PraxeolDB</h1>\n\t\t<p>The server is not yet implemented.</p>" ++
-    "\n\t\t<script src=\"app.js\"></script>\n\t</body>\n</html>";
+/// The default index.html
+pub const index_html = web_embed;
 
 /// Allocator
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
