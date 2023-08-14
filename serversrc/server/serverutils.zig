@@ -8,7 +8,7 @@ const wst = zap.WebSockets;
 fn onWebMinimal(r: zap.SimpleRequest) void {
     _ = stc.bw.write("HELLO DAVE\n") catch return;
     std.debug.print("HELLO DAVE\n", .{});
-    r.setHeader("Content-Type", "text/plain") catch unreachable;
+    r.setHeader("Content-Type", "text/html") catch unreachable;
 
     if (r.method != null and r.path != null)
         if (std.mem.eql(u8, r.method.?, "GET") and std.mem.eql(u8, r.path.?, "/")) {
@@ -25,6 +25,7 @@ fn onAppRequest(r: zap.SimpleRequest) void {
     r.setHeader("Access-Control-Allow-Headers", "*") catch unreachable;
     r.setHeader("Access-Control-Allow-Methods", "OPTIONS,POST,GET") catch unreachable;
 
+    //DEBUG block
     std.debug.print("We got client app!\n", .{});
     if (r.path) |the_path|
         std.debug.print("APP: {s}\n", .{the_path});
@@ -33,18 +34,47 @@ fn onAppRequest(r: zap.SimpleRequest) void {
     std.debug.print("body: {s}\n", .{if (r.body == null) "null" else r.body.?});
     std.debug.print("method: {s}\n", .{if (r.method == null) "null" else r.method.?});
 
-    if (r.body != null) {
-        r.setHeader("Content-Type", "application/json") catch unreachable;
-        if (std.mem.eql(u8, r.body.?, "Hello")) {
-            r.setStatus(.ok);
-            r.sendBody("Hello!") catch unreachable;
-            return;
+    const eql = std.mem.eql;
+
+    if (r.method != null) {
+        if (eql(u8, r.method.?, "POST") and r.body != null) {
+            if (eql(u8, r.body.?, "Hello!")) {
+                std.debug.print("client asks for server connection", .{});
+                r.setStatus(.ok);
+                r.sendBody("Hello!") catch unreachable;
+                return;
+            } else if (eql(u8, r.body.?[0..5], "login")) {
+                var spliterator = std.mem.splitScalar(u8, r.body.?[6..], '\n');
+                var username: []u8 = stc.allocator.alloc(u8, spliterator.buffer.len) catch |err|
+                    return std.debug.print("{!}\n", .{err});
+
+                for (spliterator.buffer, 0..) |c, i| username[i] = c;
+                _ = spliterator.next();
+                var password: []u8 = stc.allocator.alloc(u8, spliterator.buffer.len) catch |err|
+                    return std.debug.print("{!}\n", .{err});
+                for (spliterator.buffer, 0..) |c, i| password[i] = c;
+
+                const user = sql.getUser(username);
+                if (eql(u8, user.username, username) and eql(u8, user.password, password)) {
+                    r.setStatus(.ok);
+                    r.sendBody("not guilty") catch unreachable;
+                    return;
+                }
+
+                r.setStatus(.ok);
+                r.sendBody("guilty \x01") catch unreachable;
+                return;
+            }
         }
     }
+    if (r.body != null) {
+        r.setHeader("Content-Type", "application/json") catch unreachable;
+        if (eql(u8, r.body.?, "Hello")) {}
+    }
 
-    r.setHeader("Content-Type", "plain/text") catch unreachable;
+    r.setHeader("Content-Type", "text/html") catch unreachable;
     r.setStatus(.ok);
-    r.sendBody("Shoo!") catch unreachable;
+    r.sendBody(stc.server_config.landing_body) catch unreachable;
 }
 
 /// Initilalizes the HTTP fulfilment and SQL server to accept incoming requests

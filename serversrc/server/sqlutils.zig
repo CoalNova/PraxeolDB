@@ -77,16 +77,28 @@ pub const Transaction = struct {
     date: []const u8,
 };
 
-fn userCallback(user: *User, arg_c: i32, arg_v: [][]u8, a_z_column: [][]u8) i32 {
+fn userCallback(user: ?*anyopaque, arg_c: i32, arg_v: [*c][*c]u8, a_z_column: [*c][*c]u8) callconv(.C) i32 {
     _ = a_z_column;
     _ = arg_v;
     _ = arg_c;
     _ = user;
+    return 0;
 }
-pub fn getUser() User {
+pub fn getUser(username: []const u8) User {
     var user: User = User{};
+
+    //stack ops where we can
+    const prefix = "SELECT * FROM USER_DATA WHERE username = \"";
+    const pstfix = "\";";
+    var op: [76]u8 = undefined;
+    for (&op) |*b| b.* = 0;
+
+    for (prefix, 0..) |c, i| op[i] = c;
+    for (username, 0..username.len) |c, i| op[prefix.len + i] = c;
+    for (pstfix, 0..) |c, i| op[prefix.len + username.len + i] = c;
+
     var mssg: ?*u8 = null;
-    _ = sql_3.sqlite3_exec(db, stc.table_init_user_data, userCallback, &user, &mssg);
+    _ = sql_3.sqlite3_exec(db, &op, userCallback, &user, &mssg);
     return user;
 }
 
