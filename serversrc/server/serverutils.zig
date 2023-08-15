@@ -1,3 +1,9 @@
+//! Server Utils
+//! Houses utilities related to the network serving and reception of data.
+//!
+//!
+//!
+
 const std = @import("std");
 const sql = @import("sqlutils.zig");
 const zap = @import("zap");
@@ -57,7 +63,11 @@ fn onAppRequest(r: zap.SimpleRequest) void {
                 const user = sql.getUser(username);
                 if (eql(u8, user.username, username) and eql(u8, user.password, password)) {
                     r.setStatus(.ok);
-                    r.sendBody("not guilty") catch unreachable;
+                    var body_buffer: [10 + 3 + 8 + 11]u8 = undefined;
+                    for ("not guilty", 0..) |c, i| body_buffer[i] = c;
+                    for (user.permission, 0..) |c, i| body_buffer[i + 10] = c;
+                    for (user.user_id, 0..) |c, i| body_buffer[i + 13] = c;
+                    r.sendBody(&body_buffer) catch unreachable;
                     return;
                 }
 

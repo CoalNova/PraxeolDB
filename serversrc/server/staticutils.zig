@@ -1,3 +1,4 @@
+//! Static Utils
 //! A collection of static and/or constant values meant to be accessed at any
 //! position. Any const value will be thread safe, should multithreading be
 //! desired.
@@ -23,7 +24,7 @@ pub const ServerConfig = struct {
 pub var server_config: ServerConfig = undefined;
 
 /// Config file path
-pub const default_data_path = "./";
+pub const default_data_path = "./praxeoldata/";
 pub const default_config_path = default_data_path ++ "praxeol.cfg";
 pub const default_db_path = default_data_path ++ "praxeol.db";
 pub const default_js_path = default_data_path ++ "app.js";
@@ -69,6 +70,12 @@ pub fn createConfigurationFile() void {
         return std.debug.print("Config creation error: {!}\n", .{err});
     defer file.close();
 }
+
+pub const ServerStates = enum(u8) {
+    ok = 0,
+    incorrect_password = 1,
+    exec_invalid = 3,
+};
 
 pub const table_init_user_data =
     "CREATE TABLE USER_DATA( " ++
@@ -117,8 +124,6 @@ pub const table_init_order_data =
     "payload    BLOB NOT NULL, " ++
     "tracking   TEXT," ++
     "PRIMARY KEY (ordr_id)" ++
-    "FOREIGN KEY (asst_id) REFERENCES" ++
-    "   ASSET_DATA(asst_id)," ++
     "FOREIGN KEY (user_id) REFERENCES" ++
     "   SITE_DATA(user_id)" ++
     ")";

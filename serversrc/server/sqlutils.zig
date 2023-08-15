@@ -1,3 +1,7 @@
+//! SQL Utils
+//! Houses utlities for the management of the SQL database
+//!
+
 const std = @import("std");
 const stc = @import("staticutils.zig");
 pub const sql_3 = @cImport({
@@ -32,6 +36,19 @@ pub fn loadDB() void {
         checkMessage(mssg);
         _ = sql_3.sqlite3_exec(db, stc.table_init_order_data, null, null, &mssg);
         checkMessage(mssg);
+
+        const user = User{
+            .user_id = "0192837465",
+            .site_id = "0",
+            .username = "admin",
+            .password = "password",
+            .firstname = "Muriel",
+            .lastname = "Bagge",
+            .email = "mce.bagge@nowhere.net",
+            .phone = "555-555-5309",
+            .permission = "FFF",
+        };
+        addUser(user);
     }
 }
 
@@ -47,7 +64,7 @@ pub const User = struct {
     email: []const u8 = undefined,
     phone: []const u8 = undefined,
     // edit inv, edit users, edit self
-    permission: u8 = 0,
+    permission: []const u8 = undefined,
 };
 
 pub const Site = struct {
@@ -78,10 +95,11 @@ pub const Transaction = struct {
 };
 
 fn userCallback(user: ?*anyopaque, arg_c: i32, arg_v: [*c][*c]u8, a_z_column: [*c][*c]u8) callconv(.C) i32 {
-    _ = a_z_column;
     _ = arg_v;
     _ = arg_c;
     _ = user;
+    _ = a_z_column;
+
     return 0;
 }
 pub fn getUser(username: []const u8) User {
@@ -132,7 +150,7 @@ pub fn addUser(user: User) void {
 
     var mssg: ?*u8 = null;
 
-    _ = sql_3.sqlite3_exec(db, op, null, null, &mssg);
+    _ = sql_3.sqlite3_exec(db, @ptrCast(&op.items), null, null, &mssg);
 
     checkMessage(mssg);
 }
@@ -218,5 +236,5 @@ pub fn setTransaction(transaction: Transaction) bool {
 
 inline fn checkMessage(mssg: ?*u8) void {
     if (mssg != null)
-        std.debug.print("{s}\n", .{mssg.?});
+        std.debug.print("SQL message: {s}\n", .{@as([*c]u8, @ptrCast(mssg.?))});
 }

@@ -20,7 +20,7 @@ function AttemptLogin(): void{
   const xhr = new XMLHttpRequest();
   const username = (document.getElementById("session_username") as HTMLInputElement).value;
   const password = (document.getElementById("session_password") as HTMLInputElement).value;
-  
+
   xhr.onreadystatechange = () => {
     console.log(xhr.response);
     if (xhr.readyState ===4 ) 
