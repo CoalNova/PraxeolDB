@@ -33,14 +33,9 @@ fn onAppRequest(r: zap.SimpleRequest) void {
 
     //DEBUG block
     std.debug.print("We got client app!\n", .{});
-    if (r.path) |the_path|
-        std.debug.print("APP: {s}\n", .{the_path});
-    std.debug.print("path: {s}\n", .{if (r.path == null) "null" else r.path.?});
-    std.debug.print("query: {s}\n", .{if (r.query == null) "null" else r.query.?});
-    std.debug.print("body: {s}\n", .{if (r.body == null) "null" else r.body.?});
-    std.debug.print("method: {s}\n", .{if (r.method == null) "null" else r.method.?});
 
     const eql = std.mem.eql;
+    r.setStatus(.ok);
 
     if (r.method != null) {
         if (eql(u8, r.method.?, "POST") and r.body != null) {
@@ -50,29 +45,35 @@ fn onAppRequest(r: zap.SimpleRequest) void {
                 r.sendBody("Hello!") catch unreachable;
                 return;
             } else if (eql(u8, r.body.?[0..5], "login")) {
-                var spliterator = std.mem.splitScalar(u8, r.body.?[6..], '\n');
-                var username: []u8 = stc.allocator.alloc(u8, spliterator.buffer.len) catch |err|
-                    return std.debug.print("{!}\n", .{err});
-
-                for (spliterator.buffer, 0..) |c, i| username[i] = c;
+                var spliterator = std.mem.splitAny(u8, r.body.?, " ");
                 _ = spliterator.next();
-                var password: []u8 = stc.allocator.alloc(u8, spliterator.buffer.len) catch |err|
-                    return std.debug.print("{!}\n", .{err});
-                for (spliterator.buffer, 0..) |c, i| password[i] = c;
+                var username = spliterator.next();
+                var password = spliterator.next();
 
-                const user = sql.getUser(username);
-                if (eql(u8, user.username, username) and eql(u8, user.password, password)) {
-                    r.setStatus(.ok);
-                    var body_buffer: [10 + 3 + 8 + 11]u8 = undefined;
-                    for ("not guilty", 0..) |c, i| body_buffer[i] = c;
-                    for (user.permission, 0..) |c, i| body_buffer[i + 10] = c;
-                    for (user.user_id, 0..) |c, i| body_buffer[i + 13] = c;
-                    r.sendBody(&body_buffer) catch unreachable;
-                    return;
+                if (username != null and password != null) {
+                    std.debug.print("Username: \"{s}\"\nPassword: \"{s}\"\n", .{ username.?, password.? });
+
+                    const user = sql.getUser(username.?) catch |err|
+                        return std.debug.print("Unable to access db user table: {!}\n", .{err});
+
+                    std.debug.print("User:", .{});
+
+                    if (eql(u8, user.username, username.?) and eql(u8, user.password, password.?)) {
+                        r.setStatus(.ok);
+                        var body_buffer: [10 + 3 + 8 + 11]u8 = undefined;
+                        for ("not guilty", 0..) |c, i| body_buffer[i] = c;
+                        for (user.permission, 0..) |c, i| body_buffer[i + 10] = c;
+                        for (user.user_id, 0..) |c, i| body_buffer[i + 13] = c;
+                        r.sendBody(&body_buffer) catch unreachable;
+                        return;
+                    } else {
+                        //DEBUG
+                        std.debug.print("Got password: \"{s}\", expected: \"{s}\" \n", .{ password.?, user.password });
+                        return r.sendBody("guilty 1") catch unreachable;
+                    }
                 }
 
-                r.setStatus(.ok);
-                r.sendBody("guilty \x01") catch unreachable;
+                r.sendBody("guilty 3") catch unreachable;
                 return;
             }
         }

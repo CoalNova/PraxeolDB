@@ -19,7 +19,10 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-
+    const sqlite = b.dependency("sqlite", .{
+        .target = target,
+        .optimize = optimize,
+    });
     const exe = b.addExecutable(.{
         .name = if (target.isWindows()) "praxeoldb.exe" else "praxeoldb",
         // In this case the main source file is merely a path, however, in more
@@ -29,6 +32,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     exe.addModule("zap", zap.module("zap"));
+    exe.addModule("sqlite", sqlite.module("sqlite"));
     exe.linkSystemLibrary("c");
     exe.linkSystemLibrary("sqlite3");
     exe.linkLibrary(zap.artifact("facil.io"));

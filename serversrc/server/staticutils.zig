@@ -75,12 +75,13 @@ pub const ServerStates = enum(u8) {
     ok = 0,
     incorrect_password = 1,
     exec_invalid = 3,
+    incorrect_field_assignment = 5,
 };
 
 pub const table_init_user_data =
     "CREATE TABLE USER_DATA( " ++
     "user_id    INT  NOT NULL, " ++
-    "site_id    INT  NOT NULL, " ++
+    "site_id    INT, " ++
     "username   TEXT NOT NULL, " ++
     "password   TEXT NOT NULL, " ++
     "permission TEXT NOT NULL, " ++

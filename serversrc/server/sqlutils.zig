@@ -4,11 +4,9 @@
 
 const std = @import("std");
 const stc = @import("staticutils.zig");
-pub const sql_3 = @cImport({
-    @cInclude("sqlite3.h");
-});
+const sql = @import("sqlite");
 
-var db: ?*sql_3.sqlite3 = undefined;
+var db: sql.Db = undefined;
 
 pub fn loadDB() void {
     const cwd = std.fs.cwd();
@@ -17,25 +15,39 @@ pub fn loadDB() void {
     var file: ?std.fs.File = null;
 
     file = cwd.openFile(stc.server_config.db_path, .{}) catch null;
-
-    // close if opened before handing to sqlite
-    if (file != null) {
+    const db_exists = (file != null);
+    // close if exist, before handling by sqlite
+    if (db_exists)
         file.?.close();
-        _ = sql_3.sqlite3_open(@as([*c]const u8, @ptrCast(stc.server_config.db_path)), &db);
-    } else {
+
+    const fixed_path: []u8 = stc.allocator.alloc(u8, stc.server_config.db_path.len + 1) catch |err|
+        return std.debug.print("DB name allocation failure: {!}\n", .{err});
+    defer stc.allocator.free(fixed_path);
+    for (stc.server_config.db_path, 0..) |c, i| fixed_path[i] = c;
+    //path must be null terminated for c interoperability
+    fixed_path[stc.server_config.db_path.len] = '\x00';
+
+    db = sql.Db.init(.{
+        .mode = .{ .File = @ptrCast(fixed_path) },
+        .open_flags = .{
+            .write = true,
+            .create = true,
+        },
+        .threading_mode = .MultiThread,
+    }) catch |err|
+        return std.debug.print("sql(ite) error: {!}\n", .{err});
+
+    if (!db_exists) {
         std.debug.print("Database does not exist, populating fresh\n", .{});
 
-        var mssg: ?*u8 = null;
+        var diags = sql.Diagnostics{};
+        var statement = db.prepareWithDiags(stc.table_init_user_data, .{ .diags = &diags }) catch |err|
+            return std.debug.print("DB initialization failure: {!}; Diags:{s}\n", .{ err, diags });
 
-        _ = sql_3.sqlite3_open(@as([*c]const u8, @ptrCast(stc.server_config.db_path)), &db);
-        _ = sql_3.sqlite3_exec(db, stc.table_init_user_data, null, null, &mssg);
-        checkMessage(mssg);
-        _ = sql_3.sqlite3_exec(db, stc.table_init_site_data, null, null, &mssg);
-        checkMessage(mssg);
-        _ = sql_3.sqlite3_exec(db, stc.table_init_asset_data, null, null, &mssg);
-        checkMessage(mssg);
-        _ = sql_3.sqlite3_exec(db, stc.table_init_order_data, null, null, &mssg);
-        checkMessage(mssg);
+        defer statement.deinit();
+
+        statement.exec(.{}, .{}) catch |err|
+            return std.debug.print("DB initiale execution failure: {!}\n", .{err});
 
         const user = User{
             .user_id = "0192837465",
@@ -48,23 +60,25 @@ pub fn loadDB() void {
             .phone = "555-555-5309",
             .permission = "FFF",
         };
-        addUser(user);
+
+        addUser(user) catch |err|
+            return std.debug.print("Add default user error: {!}\n", .{err});
     }
 }
 
 pub fn establishTables() void {}
 
 pub const User = struct {
-    user_id: []const u8 = undefined,
-    site_id: []const u8 = undefined,
-    username: []const u8 = undefined,
-    password: []const u8 = undefined,
-    firstname: []const u8 = undefined,
-    lastname: []const u8 = undefined,
-    email: []const u8 = undefined,
-    phone: []const u8 = undefined,
+    user_id: []const u8 = " ",
+    site_id: []const u8 = " ",
+    username: []const u8 = " ",
+    password: []const u8 = " ",
+    firstname: []const u8 = " ",
+    lastname: []const u8 = " ",
+    email: []const u8 = " ",
+    phone: []const u8 = " ",
+    permission: []const u8 = " ",
     // edit inv, edit users, edit self
-    permission: []const u8 = undefined,
 };
 
 pub const Site = struct {
@@ -97,62 +111,58 @@ pub const Transaction = struct {
 fn userCallback(user: ?*anyopaque, arg_c: i32, arg_v: [*c][*c]u8, a_z_column: [*c][*c]u8) callconv(.C) i32 {
     _ = arg_v;
     _ = arg_c;
-    _ = user;
     _ = a_z_column;
+
+    user.?.* = User{};
 
     return 0;
 }
-pub fn getUser(username: []const u8) User {
+pub fn getUser(username: []const u8) !User {
     var user: User = User{};
 
     //stack ops where we can
-    const prefix = "SELECT * FROM USER_DATA WHERE username = \"";
-    const pstfix = "\";";
-    var op: [76]u8 = undefined;
-    for (&op) |*b| b.* = 0;
+    const op = "SELECT * FROM USER_DATA WHERE username = ?\x00";
 
-    for (prefix, 0..) |c, i| op[i] = c;
-    for (username, 0..username.len) |c, i| op[prefix.len + i] = c;
-    for (pstfix, 0..) |c, i| op[prefix.len + username.len + i] = c;
+    var statement = try db.prepare(op);
+    defer statement.deinit();
 
-    var mssg: ?*u8 = null;
-    _ = sql_3.sqlite3_exec(db, &op, userCallback, &user, &mssg);
+    std.debug.print("Trying to pull user \"{s}\"\n", .{username});
+    const row = try statement.oneAlloc(
+        User,
+        stc.allocator,
+        .{},
+        .{ .username = username },
+    );
+    std.debug.print("checking row\n", .{});
+
+    if (row) |db_user| {
+        user = db_user;
+    }
+
+    std.debug.print("returning user\n", .{});
     return user;
 }
 
-pub fn addUser(user: User) void {
-    const prefix = "INSERT INTO USER_DATA(user_id, site_id, username, password, permission, firstname, lastname, email, phone) VALUES (";
-    const midfix = "\", \"";
-    const pstfix = "\");";
+pub fn addUser(user: User) !void {
+    const op = "INSERT INTO USER_DATA(user_id, site_id, username, password, permission, firstname, lastname, email, phone) " ++
+        "VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
-    var op = std.ArrayList(u8).init(stc.allocator);
-    defer op.deinit();
+    var statement = db.prepare(op) catch |err|
+        return std.debug.print("DB add user failure: {!}\n", .{err});
+    defer statement.deinit();
 
-    op.appendSlice(prefix) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(user.user_id) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(prefix) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(user.site_id) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(midfix) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(user.username) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(midfix) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(user.password) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(midfix) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(user.permission) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(midfix) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(user.firstname) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(midfix) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(user.lastname) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(midfix) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(user.email) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(midfix) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(user.phone) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-    op.appendSlice(pstfix) catch |err| return std.debug.print("Add user failed: {!}\n", .{err});
-
-    var mssg: ?*u8 = null;
-
-    _ = sql_3.sqlite3_exec(db, @ptrCast(&op.items), null, null, &mssg);
-
-    checkMessage(mssg);
+    statement.exec(.{}, .{
+        .user_id = user.user_id,
+        .site_id = user.site_id,
+        .username = user.username,
+        .password = user.password,
+        .permission = user.permission,
+        .firstname = user.firstname,
+        .lastname = user.lastname,
+        .email = user.email,
+        .phone = user.phone,
+    }) catch |err|
+        return std.debug.print("DB add user execution failure: {!}\n", .{err});
 }
 
 pub fn setUser(user: User) bool {

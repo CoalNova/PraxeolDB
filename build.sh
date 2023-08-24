@@ -1,3 +1,6 @@
+# precleaning
+rm -r ./praxeoldata
+rm ./praxeoldb
 
 # build typescrypt files
 bun build ./clientsrc/*.ts --outfile ./serversrc/buildassets/app.js

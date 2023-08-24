@@ -10,13 +10,13 @@ var AttemptLogin = function() {
   xhr.onreadystatechange = () => {
     console.log(xhr.response);
     if (xhr.readyState === 4) {
-      if (xhr.response == "Hello!")
-        document.body.append("Server connection status is: [good]");
+      if (xhr.response.indexOf("not guilty") > -1)
+        document.getElementById("session_id").value = xhr.response.slice(10);
     }
   };
   xhr.open("POST", window.location.protocol + "//" + window.location.hostname + ":9864", true);
   xhr.setRequestHeader("Content-Type", "application/json");
-  xhr.send("login\n" + username + "\n" + password);
+  xhr.send("login " + username + " " + password);
 };
 var CheckAppConnection = function() {
   const xhr = new XMLHttpRequest;

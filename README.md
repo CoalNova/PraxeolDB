@@ -8,7 +8,7 @@ The study of human action and conduct, based on the notion that humans engage in
 
 ##### !WORK IN PROGRESS!
 
-PraxeolDB is an in-development twin program solution for asset management and ordering system designed for small impact and wide adoptability. It is designed for small or independant operations as a method of simple inventory requisition by multiple users. PraxeolDB is designed to use as few system resources as it can to achieve its goal.
+PraxeolDB is an in-development twin program solution for asset management and ordering system designed for small impact and wide adoptability. It is designed for small or independent operations as a method of simple inventory requisition by multiple users. PraxeolDB is designed to use as few system resources as it can to achieve its goal.
 
 Progress and project guideline can be found on the [Trello Board here](https://trello.com/b/16MHQEvr/praxeoldb). 
 
@@ -20,13 +20,13 @@ Version numbering is: `MajorRelease.PhaseCompletion.ProgressIncrementor_optional
 | n | program does not run in the build |
 | x | code does not compile |
 
-Suffixes are used springly. Phase number denotes which phase has been completed.
+Suffixes are used sparingly. Phase number denotes which phase has been completed.
 
 &nbsp;
 
-The Server:
+### The Server:
 ---
-The PraxeolDB server program is built in the [Zig](https://ziglang.org/) language, for its focus on performance, ease of use, and safety. It relies on the [Zap](https://github.com/zigzap/zap) library for web connection. It utilizes SQLite3 for database engine. 
+The PraxeolDB server program is built in the [Zig](https://ziglang.org/) language, for its focus on performance, ease of use, and safety. It relies on the [Zap](https://github.com/zigzap/zap) library for web connection. It utilizes SQLite3 via [zig-sqlite](https://github.com/vrischmann/zig-sqlite) for database engine. 
 
 Direct interfacing for the server is still being researched. Admin controls are exposed through the client using admin credentials. Ideally CLI will be used for adjusting configuration and items in a headless environment. Current plan is using `[OPTYPE -> OPERATION -> INSTRUCTION]`, examples as follows:
 
@@ -42,22 +42,23 @@ Direct interfacing for the server is still being researched. Admin controls are 
 |server|set|workers|2|
 |server|restart|||
 
-Design philosophy for installation is that all required elements are internal, and any necessaray files are generated automatically. From the executable alone everything should work.
+Design philosophy for installation is that all required elements are internal, and any necessary files are generated automatically. From the executable alone everything should work.
 
 The hardware spec targeted for the server is any run-of-the-mill office workstation as baseline, specific details TBD (intel atom/amd phenom II/3.78 hamsters).
 
 &nbsp;
 
-The Client:
+### The Client:
 ---
+![Client Mockup](https://github.com/CoalNova/PraxeolDB/blob/main/assets/clientmockup.png?raw=true)
 The PraxeolDB client uses [TypeScript](https://www.typescriptlang.org/) language for distribution over web connections. It will also allow for standalone execution, though configuration through application interface will be necessary to know which "home" to phone.
 
-A simple, clean, and most of all lite interface. It will facilitate the requesition of inventory items and supplies. It will also allow for administrative and semi-administrative editing of user, site, and inventory information. The layout should focus on a clear, readable, and organically laid out interface. It uses [Bun](https://bun.sh/) as the TypeScript compiler.
+A simple, clean, and most of all lite interface. It will facilitate the requisition of inventory items and supplies. It will also allow for administrative and semi-administrative editing of user, site, and inventory information. The layout should focus on a clear, readable, and organically laid out interface. It uses [Bun](https://bun.sh/) as the TypeScript compiler.
 
 The hardware spec for the client is an android we browser for a low to mid range android tablet, details TBD.
 
 
-Building:
+#### Building:
 ---
 
 Current requirements are [Zig](https://ziglang.org/) and [Bun](https://bun.sh/), and utilizes the sqlite3 libc system library.
