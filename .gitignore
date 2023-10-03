@@ -4,6 +4,8 @@ zig-cache/
 zig-out/
 .vscode/
 .idea/
-
+praxeoldata/
 *._db
 *.env*
+serversrc/buildassets/
+praxeoldb

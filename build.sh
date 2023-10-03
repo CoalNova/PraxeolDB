@@ -2,6 +2,9 @@
 rm -r ./praxeoldata
 rm ./praxeoldb
 
+# load necessary packages
+bun install
+
 # build typescrypt files
 bun build ./clientsrc/*.ts --outfile ./serversrc/buildassets/app.js
 

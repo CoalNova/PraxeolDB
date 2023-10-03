@@ -9,6 +9,10 @@ const sql = @import("sqlutils.zig");
 const zap = @import("zap");
 const stc = @import("staticutils.zig");
 const wst = zap.WebSockets;
+const ssn = @import("sessionutils.zig");
+
+// static name binding for easierness
+const eql = std.mem.eql;
 
 /// Basic example impl of a simple http fulfiller?
 fn onWebMinimal(r: zap.SimpleRequest) void {
@@ -27,69 +31,124 @@ fn onWebMinimal(r: zap.SimpleRequest) void {
 
 /// Handler for incoming requests
 fn onAppRequest(r: zap.SimpleRequest) void {
+
+    //DEBUG prints incoming connection
+    if (r.path) |path| std.debug.print("\npath: {s}\n", .{path});
+    if (r.method) |method| std.debug.print("method: {s}\n", .{method});
+    if (r.body) |body| std.debug.print("body: {s}\n\n", .{body});
+
     r.setHeader("Access-Control-Allow-Origin", stc.server_config.hostname) catch unreachable;
     r.setHeader("Access-Control-Allow-Headers", "*") catch unreachable;
-    r.setHeader("Access-Control-Allow-Methods", "OPTIONS,POST,GET") catch unreachable;
+    // SET may be unused, but follows accessor convention, which is morally superior to web convention (even if oop)
+    r.setHeader("Access-Control-Allow-Methods", "OPTIONS,POST,GET,SET") catch unreachable;
+    r.setHeader("Content-Type", "application/json") catch unreachable;
 
-    //DEBUG block
-    std.debug.print("We got client app!\n", .{});
-
-    const eql = std.mem.eql;
     r.setStatus(.ok);
 
-    if (r.method != null) {
-        if (eql(u8, r.method.?, "POST") and r.body != null) {
-            if (eql(u8, r.body.?, "Hello!")) {
-                std.debug.print("client asks for server connection", .{});
+    // If method and body have content, see if we have a match
+    if (r.method != null and r.body != null) {
+        if (eql(u8, r.method.?, "POST"))
+            return procPOST(r) catch |err| std.log.err("{!}\n", .{err});
+
+        if (eql(u8, r.method.?, "GET"))
+            return procGET(r) catch |err| std.log.err("{!}\n", .{err});
+
+        if (eql(u8, r.method.?, "SET"))
+            return procSET(r) catch |err| std.log.err("{!}\n", .{err});
+
+        if (eql(u8, r.method.?, "OPTIONS"))
+            return procOPTIONS(r) catch |err| std.log.err("{!}\n", .{err});
+    }
+
+    // ... otherwise return a small response to avoid providing DDOS ammo
+    r.sendBody("invalid input") catch |err| std.log.err("{!}\n", .{err});
+}
+
+fn procPOST(r: zap.SimpleRequest) !void {
+    //if connection status return hello and autho
+    if (eql(u8, r.body.?[0..6], "Hello!")) {
+        var suffix: [8]u8 = undefined;
+        for (r.body.?[6..14], 0..) |c, i| suffix[i] = c;
+        const autho = try ssn.getAutho(suffix);
+
+        var response: [14]u8 = undefined;
+        for ("Hello!" ++ autho.guest_off, 0..) |c, i| response[i] = c;
+        try r.sendBody(&response);
+        //else if login attempt
+    } else if (eql(u8, r.body.?[0..5], "login")) {
+        var spliterator = std.mem.splitAny(u8, r.body.?, " ");
+        _ = spliterator.next();
+        var username = spliterator.next();
+        var password = spliterator.next();
+
+        if (username != null and password != null) {
+            const user = sql.getUser(username.?, stc.allocator) catch |err|
+                return std.debug.print("Unable to access db user table: {!}\n", .{err});
+            // defer stc.allocator.free(user.site_id);
+            // defer stc.allocator.free(user.user_id);
+            // defer stc.allocator.free(user.username);
+            // defer stc.allocator.free(user.password);
+            // defer stc.allocator.free(user.firstname);
+            // defer stc.allocator.free(user.lastname);
+            // defer stc.allocator.free(user.email);
+            // defer stc.allocator.free(user.phone);
+            // defer stc.allocator.free(user.permission);
+
+            var suffix: [8]u8 = undefined;
+            for (r.body.?[5..13], 0..) |c, i| suffix[i] = c;
+            const autho = try ssn.getAutho(suffix);
+
+            std.debug.print("i: {s}\no: {s}\n", .{ suffix, autho.guest_off });
+
+            var pass_buff = try stc.allocator.alloc(u8, user.password.len + autho.guest_off.len);
+            defer stc.allocator.free(pass_buff);
+            for (user.password, 0..) |c, i| pass_buff[i] = c;
+            for (autho.guest_off, 0..) |c, i| pass_buff[i + user.password.len] = c;
+
+            var sha = std.crypto.hash.sha2.Sha256.init(.{});
+            sha.update(pass_buff);
+            std.debug.print("{s}\n", .{pass_buff});
+
+            var pre_result = sha.finalResult();
+            var result = try std.fmt.allocPrint(stc.allocator, "{x}", .{std.fmt.fmtSliceHexLower(@as([]const u8, @ptrCast(&pre_result)))});
+            defer stc.allocator.free(result);
+
+            if (eql(u8, user.username, username.?) and eql(u8, result, password.?)) {
                 r.setStatus(.ok);
-                r.sendBody("Hello!") catch unreachable;
+                var body_buffer: [10 + 3 + 8 + 11]u8 = undefined;
+                for ("not guilty", 0..) |c, i| body_buffer[i] = c;
+                for (user.permission, 0..) |c, i| body_buffer[i + 10] = c;
+                for (user.user_id, 0..) |c, i| body_buffer[i + 13] = c;
+                //var session = ssn.Session{ .session_id = };
+                try r.sendBody(&body_buffer);
                 return;
-            } else if (eql(u8, r.body.?[0..5], "login")) {
-                var spliterator = std.mem.splitAny(u8, r.body.?, " ");
-                _ = spliterator.next();
-                var username = spliterator.next();
-                var password = spliterator.next();
-
-                if (username != null and password != null) {
-                    std.debug.print("Username: \"{s}\"\nPassword: \"{s}\"\n", .{ username.?, password.? });
-
-                    const user = sql.getUser(username.?) catch |err|
-                        return std.debug.print("Unable to access db user table: {!}\n", .{err});
-
-                    std.debug.print("User:", .{});
-
-                    if (eql(u8, user.username, username.?) and eql(u8, user.password, password.?)) {
-                        r.setStatus(.ok);
-                        var body_buffer: [10 + 3 + 8 + 11]u8 = undefined;
-                        for ("not guilty", 0..) |c, i| body_buffer[i] = c;
-                        for (user.permission, 0..) |c, i| body_buffer[i + 10] = c;
-                        for (user.user_id, 0..) |c, i| body_buffer[i + 13] = c;
-                        r.sendBody(&body_buffer) catch unreachable;
-                        return;
-                    } else {
-                        //DEBUG
-                        std.debug.print("Got password: \"{s}\", expected: \"{s}\" \n", .{ password.?, user.password });
-                        return r.sendBody("guilty 1") catch unreachable;
-                    }
-                }
-
-                r.sendBody("guilty 3") catch unreachable;
-                return;
+            } else {
+                //DEBUG
+                std.debug.print("Got password: \"{s}\", expected: \"{s}\" \n", .{ password.?, result });
+                return try r.sendBody("guilty 1");
             }
         }
-    }
-    if (r.body != null) {
-        r.setHeader("Content-Type", "application/json") catch unreachable;
-        if (eql(u8, r.body.?, "Hello")) {}
-    }
 
-    r.setHeader("Content-Type", "text/html") catch unreachable;
-    r.setStatus(.ok);
-    r.sendBody(stc.server_config.landing_body) catch unreachable;
+        try r.sendBody("guilty 3");
+        return;
+    }
+}
+
+fn procGET(r: zap.SimpleRequest) !void {
+    _ = r;
+}
+
+fn procSET(r: zap.SimpleRequest) !void {
+    _ = r;
+}
+
+fn procOPTIONS(r: zap.SimpleRequest) !void {
+    _ = r;
 }
 
 /// Initilalizes the HTTP fulfilment and SQL server to accept incoming requests
 pub fn init() !void {
+
     //webfacing
     var web_face = zap.SimpleHttpListener.init(.{
         .port = stc.server_config.web_port,
@@ -106,7 +165,7 @@ pub fn init() !void {
         .{
             .port = stc.server_config.app_port,
             .on_request = onAppRequest,
-            .log = true,
+            .log = false,
             .max_clients = 100000,
             .max_body_size = 2048,
         },
@@ -117,7 +176,6 @@ pub fn init() !void {
 
     sql.loadDB();
     zap.start(.{ .threads = 2, .workers = 2 });
-    std.debug.print("Hullo to all\n", .{});
 }
 
 /// Processes requests

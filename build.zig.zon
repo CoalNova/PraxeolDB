@@ -6,11 +6,11 @@
         // zap v0.1.8-pre
         .zap = .{
             .url = "https://github.com/zigzap/zap/archive/refs/tags/v0.1.10-pre.tar.gz",
-            .hash = "1220a645e8ae84064f3342609f65d1c97e23c292616f5d1040cdf314ca52d7643f8a",
+            .hash = "1220af404b24a676a533e9063988ce8cd4e3a067c58ea0aa54e1547ac6d0f4de0c13",
         },
         .sqlite = .{
             .url = "https://github.com/vrischmann/zig-sqlite/archive/master.tar.gz",
-            .hash = "1220cd4a65abf35cdc436b61cf5f8243a989485d7bb570fd11abbfa363f4d3888fc8",
+            .hash = "12201bcb0eb27821fccf098504e0c4898cf0016de2d590c793a0ad9a431d67382159",
         },
     },
 }

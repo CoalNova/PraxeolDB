@@ -19,6 +19,8 @@ pub const ServerConfig = struct {
     data_path: []const u8 = default_data_path,
     landing_body: []const u8 = default_landing_body,
     hostname: []const u8 = "*", //TODO catch configured hostname
+    expiration: u64 = default_expiration_period,
+    session_stack_size: usize = 256,
 };
 
 pub var server_config: ServerConfig = undefined;
@@ -42,6 +44,9 @@ pub const default_landing_body = "<html><body><h1>HTTP ERROR 404</h1> " ++
 
 /// The default index.html
 pub const index_html = web_embed;
+
+/// Default expiration period for sessions and auths (30 minutes)
+pub const default_expiration_period: u64 = 1800000000000;
 
 /// Allocator
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -68,7 +73,38 @@ pub fn createConfigurationFile() void {
         return std.debug.print("Folder creation error: {!}\n", .{err});
     var file = std.fs.cwd().createFile(default_config_path, .{}) catch |err|
         return std.debug.print("Config creation error: {!}\n", .{err});
+
+    //FADED67
+    // follow zig (and zon) syntax formatting
+    // [.default] is default value
+    // ["./some/va.lue"] as a string is an override for the relative location
     defer file.close();
+    _ = file.write(".{\n") catch unreachable;
+
+    //web_port
+    _ = file.write("    .web_port = .default,\n") catch unreachable;
+    //app_port
+    _ = file.write("    .app_port = .default,\n") catch unreachable;
+    //db_path
+    _ = file.write("    .db_path = .default,\n") catch unreachable;
+    //js_path
+    _ = file.write("    .js_path = .default,\n") catch unreachable;
+    //html_path
+    _ = file.write("    .html_path = .default,\n") catch unreachable;
+    //fvcn_path
+    _ = file.write("    .fvcn_path = .default,\n") catch unreachable;
+    //data_path
+    _ = file.write("    .data_path = .default,\n") catch unreachable;
+    //landing_body
+    _ = file.write("    .landing_body = .default,\n") catch unreachable;
+    //hostname
+    _ = file.write("    .hostname = .default,\n") catch unreachable;
+    //expiration
+    _ = file.write("    .expiration = .default,\n") catch unreachable;
+    //session_stack_size
+    _ = file.write("    .session_stack_size = .default,\n") catch unreachable;
+
+    _ = file.write("};") catch unreachable;
 }
 
 pub const ServerStates = enum(u8) {

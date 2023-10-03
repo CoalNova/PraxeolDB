@@ -13,8 +13,15 @@
         <button id="session_login" onclick="AttemptLogin()">Log In</button>
         <br>
         <p>Session ID: <input id="session_id" disabled="disabled" type="text">
-        <br>
-        <button id="test_connection" onclick="CheckAppConnection()">test connection</button>
-        <input id="connection_state" type="checkbox" disabled="disabled">
+            <br>
+            <button id="test_connection" onclick="CheckAppConnection()">test connection</button>
+            <input id="connection_state" type="checkbox" disabled="disabled">
+        </p>
+        <p>
+            <br>
+            <button id="alt_test" onclick="CheckAltProtocol()">test protocol</button>
+            <input id="alt_protocol_output" disabled="disabled" type="text">
+        </p>
+
     </body>
 </html>

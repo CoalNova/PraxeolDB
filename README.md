@@ -57,6 +57,7 @@ A simple, clean, and most of all lite interface. It will facilitate the requisit
 
 The hardware spec for the client is an android we browser for a low to mid range android tablet, details TBD.
 
+&nbsp;
 
 #### Building:
 ---

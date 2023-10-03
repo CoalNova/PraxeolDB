@@ -58,7 +58,7 @@ pub fn loadDB() void {
             .lastname = "Bagge",
             .email = "mce.bagge@nowhere.net",
             .phone = "555-555-5309",
-            .permission = "FFF",
+            .permission = "FF",
         };
 
         addUser(user) catch |err|
@@ -117,34 +117,26 @@ fn userCallback(user: ?*anyopaque, arg_c: i32, arg_v: [*c][*c]u8, a_z_column: [*
 
     return 0;
 }
-pub fn getUser(username: []const u8) !User {
+pub fn getUser(username: []const u8, allocator: std.mem.Allocator) !User {
     var user: User = User{};
 
     //stack ops where we can
-    const op = "SELECT * FROM USER_DATA WHERE username = ?\x00";
+    const op: [:0]const u8 = "SELECT * FROM USER_DATA WHERE username = ?";
 
     var statement = try db.prepare(op);
     defer statement.deinit();
 
-    std.debug.print("Trying to pull user \"{s}\"\n", .{username});
-    const row = try statement.oneAlloc(
-        User,
-        stc.allocator,
-        .{},
-        .{ .username = username },
-    );
-    std.debug.print("checking row\n", .{});
+    const row = try statement.oneAlloc(User, allocator, .{}, .{ .username = username });
 
     if (row) |db_user| {
         user = db_user;
     }
 
-    std.debug.print("returning user\n", .{});
     return user;
 }
 
 pub fn addUser(user: User) !void {
-    const op = "INSERT INTO USER_DATA(user_id, site_id, username, password, permission, firstname, lastname, email, phone) " ++
+    const op: [:0]const u8 = "INSERT INTO USER_DATA(user_id, site_id, username, password, permission, firstname, lastname, email, phone) " ++
         "VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
     var statement = db.prepare(op) catch |err|

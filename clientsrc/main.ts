@@ -1,8 +1,14 @@
+import { time } from "console";
+
+//import from "hash-sum";
+const sum = require('hash-sum');
+const cry = require('crypto-js');
+
 //this is to prevent the transpiler from being clever
 Unshake();
 
 //Run on start, it verifies application connection to host server
-CheckAppConnection();
+//CheckAppConnection();
 
 
 //details and components of telling the optimization 
@@ -14,6 +20,8 @@ function Unshake(): void
     
 }
 
+var auth_offset = 0;
+const creation = Math.random() * 100;
 
 //Attempts a login through POST and receives back a confirmation of a sessionID
 function AttemptLogin(): void{
@@ -23,14 +31,18 @@ function AttemptLogin(): void{
 
   xhr.onreadystatechange = () => {
     console.log(xhr.response);
-    if (xhr.readyState ===4 ) 
+    if (xhr.readyState === 4 ) 
       if (xhr.response.indexOf("not guilty") > -1)
         (document.getElementById("session_id") as HTMLInputElement).value = xhr.response.slice(10);
   };
-  
+
+  console.log(password + auth_offset.toString());
+  const pass_hash = cry.SHA256(password + auth_offset.toString());
+
   xhr.open("POST", window.location.protocol + "//" + window.location.hostname + ":9864", true);
   xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.send("login" + " " + username + " " + password);
+  console.log("login" + " " + username + " " + pass_hash);
+  xhr.send("login" + sum(creation) + " " + username + " " + pass_hash);
 }
 
 
@@ -40,16 +52,22 @@ function CheckAppConnection(): void {
   xhr.onreadystatechange = () => {
 
     console.log( "XHR response: " + xhr.response);
-    if (xhr.readyState ===4 ) 
-      if (xhr.response == "Hello!")
+    if (xhr.readyState === 4 ) 
+    var index  = xhr.response.indexOf("Hello!");
+      if ( index > -1)
       {
         (document.getElementById("connection_state") as HTMLInputElement).checked = true;
-        console.log("Connection verified\n");        
+        console.log("Connection verified\n");
+        auth_offset = parseInt(String(xhr.response).substring(index+6));        
+      }
+      else
+      {
+        console.log("Connection test failed, server said\n");
       }
 
   };
   
   xhr.open("POST", window.location.protocol + "//" + window.location.hostname + ":9864", true);
   xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.send("Hello!");
+  xhr.send("Hello!" + sum(creation));
 }
