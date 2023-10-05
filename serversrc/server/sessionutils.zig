@@ -28,7 +28,7 @@ pub const Autho = struct {
     expiration: std.time.Instant = undefined,
 };
 
-var sessions: []?*Session = undefined;
+var sessions: []?Session = undefined;
 var session_count: usize = 0;
 
 var auths: []Autho = undefined;
@@ -37,7 +37,8 @@ var auth_counts: usize = 0;
 /// Initializes Session collection to a presized amount as designated in the config.
 /// (or supplied elsewhere in case)
 pub fn init(max_sessions: usize) !void {
-    sessions = try stc.allocator.alloc(?*Session, max_sessions);
+    sessions = try stc.allocator.alloc(?Session, max_sessions);
+    for (0..max_sessions) |i| sessions[i] = null;
     auths = try stc.allocator.alloc(Autho, max_sessions);
 }
 /// Frees memory and attempts to write a 0-length array for just-in-case uafs.
@@ -46,36 +47,48 @@ pub fn deinit() void {
     sessions = undefined;
 }
 
-pub fn createSession(user: sql.User, allocator: std.mem.Allocator) *Session {
-    _ = user;
-    var session = allocator.create(Session);
-    _ = session;
-}
 /// Attempts to create a session and place into sessions, returns session or failure if stack is full of valid sessions.
-pub fn addSession(user: sql.User) !Session {
-
+pub fn getSession(user: sql.User) !Session {
     // First see if session is already in the system (page refresh or prior timeout?) and update expiration
-    for (sessions, 0..session_count) |*s, _| {
-        if (std.mem.eql([]u8, user.user_id, s.user_id)) {
-            s.expiration = std.time.Instant.now();
-            return s.*;
-        }
+    for (sessions) |*s| {
+        if (s.*) |*sess|
+            if (std.mem.eql(u8, user.user_id, &sess.user_id)) {
+                sess.expiration = try std.time.Instant.now();
+                return sess.*;
+            };
     }
 
     //create new session
-    var session_id = user.permission[0..2] ++ user.user_id[0..6] ++ "hulloyes";
     var session = Session{
-        .session_id = session_id,
-        .user_id = user.user_id,
-        .permission = user.permission,
-        .expiration = std.time.Instant.now(),
+        .permission = std.fmt.parseInt(u8, user.permission, 0x10) catch |err| {
+            std.log.err("Unable to parse permission {s}\n", .{user.permission});
+            return err;
+        },
+        .expiration = try std.time.Instant.now(),
     };
-
-    //see if we can just plonk it at the end
+    uid: for (user.user_id, 0..) |c, i| {
+        if (i >= session.user_id.len) break :uid;
+        session.user_id[i] = c;
+    }
+    session.session_id[0] = session.permission;
+    sid: for (user.user_id, 0..) |c, i| {
+        if (i >= session.session_id.len + 1) break :sid;
+        session.session_id[i + 1] = c;
+    }
+    // see if we can just plonk it at the end
     if (session_count + 1 < sessions.len) {
         sessions[session_count] = session;
         session_count += 1;
-        return;
+        return session;
+    }
+    // else see if one has expired that we can use
+    for (sessions, 0..) |s, i| {
+        if (s) |sess| {
+            if (session.expiration.since(sess.expiration) >= stc.server_config.expiration) {
+                sessions[i] = session;
+                return session;
+            }
+        }
     }
 
     //else no more room at the inn
@@ -95,8 +108,13 @@ pub fn getAutho(guest_id: [8]u8) !Autho {
     var autho = Autho{
         .guest_id = guest_id,
         .expiration = std.time.Instant.now() catch unreachable,
-        .guest_off = [_]u8{'8'} ** 8,
     };
+
+    // generate a 'random' autho offset in alphanumeric
+    for (&autho.guest_off, 0..) |*c, i| {
+        const ank: u8 = @intCast((stc.rand.next() + guest_id[i]) % 62);
+        c.* = if (ank < 10) ank + '0' else if (ank < 36) ank - 10 + 'A' else ank - 36 + 'a';
+    }
 
     // add to end if not full
     if (auth_counts + 1 < auths.len) {

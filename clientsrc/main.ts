@@ -4,12 +4,15 @@ import { time } from "console";
 const sum = require('hash-sum');
 const cry = require('crypto-js');
 
-//this is to prevent the transpiler from being clever
-Unshake();
+//offset for requests
+var auth_offset = "";
+const creation = Math.random() * 100;
 
 //Run on start, it verifies application connection to host server
-//CheckAppConnection();
+CheckAppConnection();
 
+//this is to prevent the transpiler from being clever
+Unshake();
 
 //details and components of telling the optimization 
 const leave_tree_unshaken = {AttemptLogin, CheckAppConnection};
@@ -20,8 +23,6 @@ function Unshake(): void
     
 }
 
-var auth_offset = 0;
-const creation = Math.random() * 100;
 
 //Attempts a login through POST and receives back a confirmation of a sessionID
 function AttemptLogin(): void{
@@ -58,7 +59,7 @@ function CheckAppConnection(): void {
       {
         (document.getElementById("connection_state") as HTMLInputElement).checked = true;
         console.log("Connection verified\n");
-        auth_offset = parseInt(String(xhr.response).substring(index+6));        
+        auth_offset = String(xhr.response).substring(index+6);        
       }
       else
       {

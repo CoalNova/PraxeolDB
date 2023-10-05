@@ -81,24 +81,17 @@ fn procPOST(r: zap.SimpleRequest) !void {
         var username = spliterator.next();
         var password = spliterator.next();
 
+        // if the supplied username and password aren't empty
         if (username != null and password != null) {
-            const user = sql.getUser(username.?, stc.allocator) catch |err|
-                return std.debug.print("Unable to access db user table: {!}\n", .{err});
-            // defer stc.allocator.free(user.site_id);
-            // defer stc.allocator.free(user.user_id);
-            // defer stc.allocator.free(user.username);
-            // defer stc.allocator.free(user.password);
-            // defer stc.allocator.free(user.firstname);
-            // defer stc.allocator.free(user.lastname);
-            // defer stc.allocator.free(user.email);
-            // defer stc.allocator.free(user.phone);
-            // defer stc.allocator.free(user.permission);
+            // get the user associated with the username
+            var user = sql.getUser(username.?, stc.allocator) catch |err|
+                return std.log.err("Unable to access db user table: {!}", .{err});
+            defer sql.freeUser(&user);
 
+            // hash stored password to check match on request
             var suffix: [8]u8 = undefined;
             for (r.body.?[5..13], 0..) |c, i| suffix[i] = c;
             const autho = try ssn.getAutho(suffix);
-
-            std.debug.print("i: {s}\no: {s}\n", .{ suffix, autho.guest_off });
 
             var pass_buff = try stc.allocator.alloc(u8, user.password.len + autho.guest_off.len);
             defer stc.allocator.free(pass_buff);
@@ -107,28 +100,37 @@ fn procPOST(r: zap.SimpleRequest) !void {
 
             var sha = std.crypto.hash.sha2.Sha256.init(.{});
             sha.update(pass_buff);
-            std.debug.print("{s}\n", .{pass_buff});
-
             var pre_result = sha.finalResult();
             var result = try std.fmt.allocPrint(stc.allocator, "{x}", .{std.fmt.fmtSliceHexLower(@as([]const u8, @ptrCast(&pre_result)))});
             defer stc.allocator.free(result);
 
+            // if hashes match, we have a valid login
             if (eql(u8, user.username, username.?) and eql(u8, result, password.?)) {
-                r.setStatus(.ok);
-                var body_buffer: [10 + 3 + 8 + 11]u8 = undefined;
-                for ("not guilty", 0..) |c, i| body_buffer[i] = c;
-                for (user.permission, 0..) |c, i| body_buffer[i + 10] = c;
-                for (user.user_id, 0..) |c, i| body_buffer[i + 13] = c;
-                //var session = ssn.Session{ .session_id = };
+                // grab/create session
+                const session = try ssn.getSession(user);
+
+                // fill in response, which includes sessionID
+                const affirm = "not guilty";
+                var body_buffer: [affirm.len + 10]u8 = undefined;
+                for (affirm, 0..) |c, i| body_buffer[i] = c;
+                for (session.session_id, 0..) |c, i| body_buffer[i + affirm.len] = c;
+
+                // send it
                 try r.sendBody(&body_buffer);
                 return;
             } else {
-                //DEBUG
-                std.debug.print("Got password: \"{s}\", expected: \"{s}\" \n", .{ password.?, result });
+                // return failure
+                std.log.info("\nExpect: [{s}]\nActual: [{s}]\nOffset: [{s}]", .{
+                    result,
+                    password.?,
+                    autho.guest_off,
+                });
+
                 return try r.sendBody("guilty 1");
             }
         }
 
+        //return failure
         try r.sendBody("guilty 3");
         return;
     }

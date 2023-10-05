@@ -22717,7 +22717,7 @@ var CheckAppConnection = function() {
     if (index > -1) {
       document.getElementById("connection_state").checked = true;
       console.log("Connection verified\n");
-      auth_offset = parseInt(String(xhr.response).substring(index + 6));
+      auth_offset = String(xhr.response).substring(index + 6);
     } else {
       console.log("Connection test failed, server said\n");
     }
@@ -22728,7 +22728,8 @@ var CheckAppConnection = function() {
 };
 var sum = require_hash_sum();
 var cry = require_crypto_js();
+var auth_offset = "";
+var creation = Math.random() * 100;
+CheckAppConnection();
 Unshake();
 var leave_tree_unshaken = { AttemptLogin, CheckAppConnection };
-var auth_offset = 0;
-var creation = Math.random() * 100;

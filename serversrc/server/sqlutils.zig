@@ -54,11 +54,11 @@ pub fn loadDB() void {
             .site_id = "0",
             .username = "admin",
             .password = "password",
+            .permission = "FF",
             .firstname = "Muriel",
             .lastname = "Bagge",
             .email = "mce.bagge@nowhere.net",
             .phone = "555-555-5309",
-            .permission = "FF",
         };
 
         addUser(user) catch |err|
@@ -73,11 +73,11 @@ pub const User = struct {
     site_id: []const u8 = " ",
     username: []const u8 = " ",
     password: []const u8 = " ",
+    permission: []const u8 = " ",
     firstname: []const u8 = " ",
     lastname: []const u8 = " ",
     email: []const u8 = " ",
     phone: []const u8 = " ",
-    permission: []const u8 = " ",
     // edit inv, edit users, edit self
 };
 
@@ -133,6 +133,18 @@ pub fn getUser(username: []const u8, allocator: std.mem.Allocator) !User {
     }
 
     return user;
+}
+
+pub fn freeUser(user: *User) void {
+    defer stc.allocator.free(user.site_id);
+    defer stc.allocator.free(user.user_id);
+    defer stc.allocator.free(user.username);
+    defer stc.allocator.free(user.password);
+    defer stc.allocator.free(user.firstname);
+    defer stc.allocator.free(user.lastname);
+    defer stc.allocator.free(user.email);
+    defer stc.allocator.free(user.phone);
+    defer stc.allocator.free(user.permission);
 }
 
 pub fn addUser(user: User) !void {

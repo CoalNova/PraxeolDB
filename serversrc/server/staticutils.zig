@@ -52,6 +52,9 @@ pub const default_expiration_period: u64 = 1800000000000;
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 pub const allocator = gpa.allocator();
 
+/// Pseudo Rand
+pub var rand = std.rand.DefaultPrng.init(0);
+
 //standard writer
 const stdout_file = std.io.getStdOut().writer();
 pub var bw = std.io.bufferedWriter(stdout_file);
