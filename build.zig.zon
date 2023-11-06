@@ -1,16 +1,15 @@
 .{
     .name = "PraxeolDB",
     .version = "0.0.3",
-
+    .paths = .{""},
     .dependencies = .{
-        // zap v0.1.8-pre
         .zap = .{
-            .url = "https://github.com/zigzap/zap/archive/refs/tags/v0.1.10-pre.tar.gz",
-            .hash = "1220af404b24a676a533e9063988ce8cd4e3a067c58ea0aa54e1547ac6d0f4de0c13",
+            .url = "https://github.com/CoalNova/zap/archive/refs/heads/master.tar.gz",
+            .hash = "122022e7e384711875bc0dd8dfc41c64ef70577538d6172f1996e4aa168e2343fee7",
         },
         .sqlite = .{
-            .url = "https://github.com/vrischmann/zig-sqlite/archive/master.tar.gz",
-            .hash = "12201bcb0eb27821fccf098504e0c4898cf0016de2d590c793a0ad9a431d67382159",
+            .url = "https://github.com/vrischmann/zig-sqlite/archive/refs/heads/master.tar.gz",
+            .hash = "1220512303adab108ca999bf60b40bf2e981eb5fdc4b30523e601c650f7fb97e3a15",
         },
     },
 }

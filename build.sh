@@ -13,7 +13,7 @@ cp ./assets/favicon.ico ./serversrc/buildassets/favicon.ico
 cp ./clientsrc/main.html ./serversrc/buildassets/index.html
 
 # build zig
-zig build -Doptimize=ReleaseSafe -freference-trace
+zig build -freference-trace
 
 # move built exe to current
 cp ./zig-out/bin/praxeoldb ./praxeoldb

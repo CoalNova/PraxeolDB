@@ -62,61 +62,6 @@ pub const stdout = bw.writer();
 
 pub var buffer = [_]u8{0} ** 1024;
 
-/// Loads configuration file or
-pub fn loadConfigurationFile() void {
-
-    //if config not found, create one with default values
-    std.debug.print("not yet implemented\n", .{});
-    createConfigurationFile();
-    server_config = ServerConfig{};
-}
-
-pub fn createConfigurationFile() void {
-    std.fs.cwd().makePath("./praxeoldata") catch |err|
-        return std.debug.print("Folder creation error: {!}\n", .{err});
-    var file = std.fs.cwd().createFile(default_config_path, .{}) catch |err|
-        return std.debug.print("Config creation error: {!}\n", .{err});
-
-    //FADED67
-    // follow zig (and zon) syntax formatting
-    // [.default] is default value
-    // ["./some/va.lue"] as a string is an override for the relative location
-    defer file.close();
-    _ = file.write(".{\n") catch unreachable;
-
-    //web_port
-    _ = file.write("    .web_port = .default,\n") catch unreachable;
-    //app_port
-    _ = file.write("    .app_port = .default,\n") catch unreachable;
-    //db_path
-    _ = file.write("    .db_path = .default,\n") catch unreachable;
-    //js_path
-    _ = file.write("    .js_path = .default,\n") catch unreachable;
-    //html_path
-    _ = file.write("    .html_path = .default,\n") catch unreachable;
-    //fvcn_path
-    _ = file.write("    .fvcn_path = .default,\n") catch unreachable;
-    //data_path
-    _ = file.write("    .data_path = .default,\n") catch unreachable;
-    //landing_body
-    _ = file.write("    .landing_body = .default,\n") catch unreachable;
-    //hostname
-    _ = file.write("    .hostname = .default,\n") catch unreachable;
-    //expiration
-    _ = file.write("    .expiration = .default,\n") catch unreachable;
-    //session_stack_size
-    _ = file.write("    .session_stack_size = .default,\n") catch unreachable;
-
-    _ = file.write("};") catch unreachable;
-}
-
-pub const ServerStates = enum(u8) {
-    ok = 0,
-    incorrect_password = 1,
-    exec_invalid = 3,
-    incorrect_field_assignment = 5,
-};
-
 pub const table_init_user_data =
     "CREATE TABLE USER_DATA( " ++
     "user_id    INT  NOT NULL, " ++

@@ -2,12 +2,13 @@ const std = @import("std");
 const srv = @import("server/serverutils.zig");
 const sql = @import("server/sqlutils.zig");
 const stc = @import("server/staticutils.zig");
+const fio = @import("server/fileio.zig");
 const ssn = @import("server/sessionutils.zig");
 
 pub fn main() !void {
 
     //MEBE load separately for now in case it needs something special
-    stc.loadConfigurationFile();
+    try fio.loadConfigurationFile();
 
     try srv.establish();
 

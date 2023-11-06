@@ -159,6 +159,7 @@ pub fn init() !void {
         .log = true,
         .max_clients = 100000,
         .max_body_size = 2048,
+        .tls = zap.fio_tls_new("CoalNova.us", null, null, null),
     });
 
     //appfacing
@@ -170,6 +171,7 @@ pub fn init() !void {
             .log = false,
             .max_clients = 100000,
             .max_body_size = 2048,
+            .tls = zap.fio_tls_new("CoalNova.us", null, null, null),
         },
     );
 
@@ -191,14 +193,7 @@ pub fn establish() !void {
     const fs = std.fs;
     const cwd = fs.cwd();
 
-    cwd.access(stc.server_config.config_path, .{}) catch |err|
-        {
-        if (err == fs.Dir.OpenError.FileNotFound) {
-            var file = try cwd.createFile(stc.server_config.config_path, .{});
-            defer file.close();
-            _ = try file.write(stc.app_embed);
-        }
-    };
+    std.debug.print("{s}\n", .{stc.server_config.js_path});
 
     cwd.access(stc.server_config.js_path, .{}) catch |err|
         {
