@@ -11,7 +11,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: locale Zig
-        run: sudo snap install zig --classic --channel=0.12.0
+      - name: Local Zig      
+        run: curl -OJ https://ziglang.org/download/0.12.0/zig-linux-x86_64-0.12.0.tar.xz && 
+          tar -xf zig-linux-x86_64-0.12.0.tar.xz  
       - name: Build with Zig
-        run: zig build
+        run: ./zig-linux-x86_64-0.12.0/zig build
