@@ -1,0 +1,12 @@
+:root {
+    --primary_color: #eea47f;
+    --secondary_color: #00539c;
+    --a_color: #121314;
+    --b_color: #cccdcf;
+    --c_color: #b00a12;
+    --d_color: #f0a112;
+}
+
+body{ color: var(--b_color); background-color: var(--a_color);}
+textarea{ color: var(--a_color); background-color: var(--b_color);}
+input[disabled]{color: var(--b_color); background-color: var(--a_color); border-block-color: transparent;}

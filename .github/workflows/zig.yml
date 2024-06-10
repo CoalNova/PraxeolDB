@@ -1,0 +1,17 @@
+name: Zig Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: locale Zig
+        run: sudo snap install zig --classic --edge
+      - name: Build with Zig
+        run: zig build

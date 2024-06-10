@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>PraxeolDB</title>
+    </head>
+    <body id="body">
+        <link rel="stylesheet" href="main.css">
+        <div id="header">
+            <img src="logo.png" alt="Logo Image" width="25%"> 
+            <textarea name="output_field" id="output_field" rows="10" disabled="true" cols="50" draggable="false" style="margin-left: 35%; width: 35%;"></textarea>
+            </br>
+            Hello, welcome!
+        </div>
+        <div id="login">
+            <input type="text" name="username_field" id="username_field" placeholder="username">
+            <input type="password" name="password_field" id="password_field" placeholder="password">
+            <button id="login_button" onclick="login()">Login</button>&nbsp;<button id="logout_button">Logout</button>
+            <input type="text" name="session_field" id="session_field" placeholder="session" disabled="true">
+        </div>
+        </br>
+        <button type="button" id="ordering_button" onclick="setTab(1)">Ordering</button>
+        <button type="button" id="asset_button" onclick="setTab(2)">Asset</button>
+        <button type="button" id="order_manage_button" onclick="setTab(3)">Order Management</button>
+        <button type="button" id="administration_button" onclick="setTab(4)">Administration</button>
+
+        <div id="ordering_tab">
+            <h4>Ordering</h4>
+            Asset Code<input type="text" name="asset code" id="asset_code_field" onkeyup="invQuant()" onformchange="invQuant()">
+            Count:<input type="text" name="inv_quant" id="inv_quant_field" disabled="true" width="4">
+            </br>
+            <textarea name="order manifest" id="order_manifest_field" cols="30" rows="10"></textarea>
+        </div>
+        
+        <div id="asset_tab">
+            <h4>Asset Management</h4>
+            <table>
+                <tr>
+                    <td>
+                        Asset Code: <input type="text" name="asset_table_code_field" id="asset_table_code_field"> 
+                    </td>
+                    <td>
+                        <button type="button" onclick="getAsset()">Lookup Asset</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Quantity: <input type="text" name="asset_table_quant_field" id="asset_table_quant_field"> 
+                    </td>
+                    <td>
+                        Description: <input type="text" name="asset_table_desc_field" id="asset_table_desc_field">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Manufacturer: <input type="text" name="asset_table_manufacture_field" id="asset_table_manufacture_field">
+                    </td>
+                    <td>
+                        Storage: <input type="text" name="asset_table_storage_field" id="asset_table_storage_field">
+                    </td>
+                </tr>
+            </table>
+            <button type="button">Download Asset List as CSV</button>
+            <textarea name="Asset List" id="inv_list_field" style="margin-left: 15%; height:55%; width:70%;"></textarea>
+        </div>
+
+        <div id="order_management_tab">
+            <h4>Order Management</h4>
+            <button type="button">Download Order List as CSV</button>
+            <textarea name="Order List" id="order_list_field" style="margin-left: 15%; height: 55%; width: 70%;"></textarea>
+        </div>
+        <div id="admin_tab">
+            <h4>User Administration</h4>
+            <table>                
+                <tr>
+                    <td>
+                        User ID: <input type="text" name="user_table_id_field" id="user_table_id_field">
+                    </td>
+                    <td>
+                        <button type="button" onclick="getUser()">Lookup User</button>
+                    </td>
+                </tr>
+            <tr>
+                <td>
+                    Site ID: <input type="text" name="user_table_site_id_field" id="user_table_site_id_field">
+                </td>
+                <td>
+                    Name: <input type="text" name="user_table_name_field" id="user_table_name_field">
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Username: <input type="text" name="user_table_username_field" id="user_table_username_field">   
+                </td>
+                <td>
+                    Password: <input type="text" name="user_table_password_field" id="user_table_password_field">
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Email: <input type="text" name="user_table_email_field" id="user_table_email_field">
+                </td>
+                <td>
+                    Phone: <input type="text" name="user_table_phone_field" id="user_table_phone_field">
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Permissions: <input type="text" name="user_table_permissions_field" id="user_table_permissions_field">
+                </td>
+            </tr>
+        </table>
+    </div>
+        <script src="main.js"></script>
+    </body>
+</html>

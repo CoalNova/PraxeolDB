@@ -1,0 +1,12 @@
+node_modules/
+dist/
+zig-cache/
+zig-out/
+.vscode/
+.idea/
+praxeoldata/
+*._db
+*.db
+*.env*
+serversrc/buildassets/
+praxeoldb
