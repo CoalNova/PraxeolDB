@@ -3,7 +3,7 @@
 prax·​e·​ol·​o·​gy ˌ[prak-sē-ˈä-lə-jē] 
 The study of human action and conduct, based on the notion that humans engage in purposeful behavior.
 ```
-![PraxeolDB Logo](https://github.com/CoalNova/PraxeolDB/blob/main/assets/logosmoll.png?raw=true)
+![PraxeolDB Logo](https://github.com/CoalNova/PraxeolDB/blob/main/serversrc/build_assets/logosmoll.png?raw=true)
 --- 
 
 PraxeolDB is a program dedicated to facilitate warehouse inventory ordering. It is not intended to handle financial transactions. PraxeolDB is designed for use by warehouse inventory managers on small scales and on often slow office computers. It is meant to be easily deployed and maintained, and to be as unobtrusive as possible.
@@ -69,4 +69,9 @@ The hardware spec for the client is any system powerful enough to run a javascri
 
 Current requirements are [Zig](https://ziglang.org/) 0.12.0.
 
-Running `build.sh` in Linux or on Windows via [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) will produce the `praxeoldb` executable in the top project directory.
+Running `build.sh` in Linux, or on Windows via [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install), will produce the `praxeoldb` executable in the top project directory.
+
+### Using:
+---
+
+At this time, the program will launch and generate the `praxeol.db` database in the working directory. The interface may be accessed, by default, via a browser at `https://localhost:4443`. Default login for template user is username: `admin` password: `password`. Most features are not yet implemented.
