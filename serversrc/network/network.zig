@@ -3,6 +3,7 @@ const zap = @import("zap");
 const sql = @import("sqlite");
 const cfg = @import("../configuration.zig");
 const fio = @import("../fullio.zig");
+const alc = @import("../allocator.zig");
 const bst = @import("../buildassets.zig");
 const ssn = @import("../session/session.zig");
 const usr = @import("../database/user.zig");
@@ -10,7 +11,7 @@ const ast = @import("../database/asset.zig");
 const ord = @import("../database/order.zig");
 const ste = @import("../database/site.zig");
 const sdb = @import("../database/sqldb.zig");
-const alc = @import("../allocator.zig");
+const tbi = @import("../database/tableinterface.zig");
 
 pub fn init(config: cfg.Configuration) !void {
     //webfacing
@@ -21,7 +22,12 @@ pub fn init(config: cfg.Configuration) !void {
         .log = true,
         .max_clients = 100000,
         .max_body_size = 2048,
-        .tls = try zap.Tls.init(.{ .server_name = "localhost" }),
+        .tls = try zap.Tls.init(.{
+            .server_name = if (config.ssl_name) |ssl_name| @ptrCast(ssl_name) else null,
+            .public_certificate_file = if (config.ssl_cert_pem) |ssl_cert_pem| @ptrCast(ssl_cert_pem) else null,
+            .private_key_file = if (config.ssl_privkey_pem) |ssl_privkey_pem| @ptrCast(ssl_privkey_pem) else null,
+            .private_key_password = if (config.ssl_privkey_pass) |ssl_privkey_pass| @ptrCast(ssl_privkey_pass) else null,
+        }),
     };
     var web_face = zap.HttpListener.init(settings);
 
@@ -152,7 +158,7 @@ fn onPOST(r: zap.Request) void {
                 if (eql(u8, command, "login"))
                     return login(r, &split) catch |err| {
                         std.debug.print("Error occured during login: {!}\n", .{err});
-                        sendWhoopsie(r, "An error occured during login\n");
+                        transmitError(r, "An error occured during login\n");
                         return;
                     };
 
@@ -160,23 +166,27 @@ fn onPOST(r: zap.Request) void {
                 if (eql(u8, command, "query_q"))
                     return queryAssetQuantity(r, &split) catch |err| {
                         std.log.err("Asset query error: {!}", .{err});
-                        sendWhoopsie(r, "An error occured while querying asset levels.");
+                        transmitError(r, "An error occured while querying asset levels.");
                         return;
                     };
 
                 // "get_a" for asset
                 if (eql(u8, command, "get_a")) {
-                    std.debug.print("get_a\n", .{});
-                }
-
-                // "get_o" for orders
-                if (eql(u8, command, "get_o")) {
-                    std.debug.print("get_o\n", .{});
+                    if (split.next()) |asset_code| {
+                        getTransmitRecord(r, ast.Asset, "asset_data", "asset_code", asset_code) catch |err| {
+                            std.log.err("Get Transmit Asset Error: {!}", .{err});
+                            transmitError(r, "Error occured when attempting to " ++
+                                "retrieve and transmit asset record.");
+                            return;
+                        };
+                        return;
+                    }
                 }
 
                 // "get_u" for users
                 // TODO extend either user_id or username
                 if (eql(u8, command, "get_u")) {
+                    // recieve json
                     std.debug.print("get_u\n", .{});
                 }
 
@@ -184,6 +194,11 @@ fn onPOST(r: zap.Request) void {
                 // TODO extend Site code, site name, address
                 if (eql(u8, command, "get_s")) {
                     std.debug.print("get_s\n", .{});
+                }
+
+                // "get_o" for orders
+                if (eql(u8, command, "get_o")) {
+                    std.debug.print("get_o\n", .{});
                 }
             }
         }
@@ -270,7 +285,7 @@ pub fn auth(split: *std.mem.SplitIterator(u8, .scalar)) bool {
     return false;
 }
 
-pub fn sendWhoopsie(r: zap.Request, whoops_description: []const u8) void {
+pub fn transmitError(r: zap.Request, whoops_description: []const u8) void {
     r.setStatus(.ok);
     r.setHeader("Content-Type", "text/plain") catch |err| {
         std.log.err("{!}", .{err});
@@ -278,4 +293,67 @@ pub fn sendWhoopsie(r: zap.Request, whoops_description: []const u8) void {
     r.sendBody(whoops_description) catch |err| {
         std.log.err("{!}", .{err});
     };
+}
+
+pub fn getTransmitRecord(r: zap.Request, comptime T: type, comptime table: []const u8, comptime column: []const u8, query: []const u8) !void {
+    const statement = try sdb.db.prepare(
+        struct { q: sql.Text },
+        T,
+        "SELECT * FROM " ++ table ++ " WHERE " ++ column ++ " = :q",
+    );
+    defer statement.finalize();
+
+    try statement.bind(.{ .q = sql.text(query) });
+    defer statement.reset();
+
+    if (try statement.step()) |result| {
+        const s = switch (T) {
+            ast.Asset => .{
+                .asset_code = result.asset_code.data,
+                .quantity = result.quantity,
+                .desc = result.desc.data,
+                .brand = result.brand.data,
+                .storage = result.storage.data,
+            },
+            usr.User => .{
+                .user_id = result.user_id,
+                .site_id = result.site_id,
+                .username = result.username.data,
+                .password = result.password.data,
+                .name = result.name.data,
+                .email = result.email.data,
+                .phone = result.phone.data,
+                .permission = result.permission.data,
+            },
+            ord.Order => .{
+                .order_id = result.order_id,
+                .user_id = result.user_id,
+                .site_id = result.site_id,
+                .date = result.date.data,
+                .tracking = result.tracking.data,
+                .courier = result.courier.data,
+                .manifest = result.manifest.data,
+            },
+            ste.Site => .{
+                .site_id = result.site_id,
+                .title = result.title.data,
+                .address = result.address.data,
+                .notes = result.notes.data,
+                .contact_name = result.contact_name.data,
+                .contact_phone = result.contact_phone.data,
+            },
+            else => return error.IncompatableType,
+        };
+
+        const json = try std.json.stringifyAlloc(
+            alc.fba,
+            s,
+            .{ .emit_nonportable_numbers_as_strings = true },
+        );
+        defer alc.fba.free(json);
+
+        r.setStatus(.ok);
+        try r.setHeader("Content-Type", "application/json");
+        try r.sendBody(json);
+    }
 }

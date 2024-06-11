@@ -6,7 +6,10 @@ pub const Configuration = struct {
     hostport: u16 = 4443,
     enable_logging: bool = true,
     db_path: []const u8 = "./praxeol.db",
-    ssl_name: ?[]const u8 = null,
+    ssl_name: ?[:0]const u8 = "localhost",
+    ssl_cert_pem: ?[:0]const u8 = null,
+    ssl_privkey_pem: ?[:0]const u8 = null,
+    ssl_privkey_pass: ?[:0]const u8 = null,
     self_hostname: []const u8 = "*",
     session_stack_size: usize = 256,
 };
@@ -25,6 +28,10 @@ pub fn getConfig() Configuration {
         //check if config creation flag is present, generate if so
         for (flags) |flag|
             if (std.mem.eql(u8, flag, "-gen")) {
+                cwd.makeDir("./praxeoldata") catch |err| {
+                    std.log.err("{!}", .{err});
+                    return .{};
+                };
                 var f = cwd.createFile("./praxeoldata/config.json", .{}) catch |err| {
                     std.log.err("{!}", .{err});
                     return .{};

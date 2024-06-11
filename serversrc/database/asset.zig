@@ -23,6 +23,17 @@ pub const upd_args =
     "UPDATE asset_data SET quantity = :quantity, desc = :desc, brand = :brand, " ++
     "storage = :storage, WHERE asset_code == :site_id";
 
+pub fn copy(a: Asset, allocator: std.mem.Allocator) !Asset {
+    return create(
+        a.asset_code,
+        a.quantity,
+        a.desc,
+        a.brand,
+        a.storage,
+        allocator,
+    );
+}
+
 pub fn create(
     asset_code: []const u8,
     quantity: i32,

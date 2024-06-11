@@ -171,7 +171,14 @@ function getUser() {
     const xhr = new XMLHttpRequest();
     // TODO send partial record for inquiry
     const user_id = document.getElementById("user_table_id_field").value;
-    
+    const user_site_id = document.getElementById("user_table_site_id_field").value;
+    const user_name = document.getElementById("user_table_name_field").value;
+    const user_username = document.getElementById("user_table_username_field").value;
+    const user_password = document.getElementById("user_table_password_field").value;
+    const user_email = document.getElementById("user_table_email_field").value;
+    const user_phone = document.getElementById("user_table_phone_field").value;
+    const user_permissions = document.getElementById("user_table_permissions_field").value;
+
     xhr.onreadystatechange = () => {
         if (xhr.readyState === 4 ) 
             {
@@ -193,10 +200,21 @@ function getUser() {
     const uri_path = "";
     //oPrint(uri_path);
     
+    let json_user = JSON.stringify({
+        user_id : user_id,
+        site_id : user_site_id,
+        username : user_name,
+        password : user_username,
+        name : user_password,
+        email : user_email,
+        phone : user_phone,
+        permission : user_permissions,
+    });
+
     xhr.open("POST", null, true);
     xhr.setRequestHeader('Content-Type', 'application/xml');
-    console.log("get_u " + user_id.trim() + " " + Session.session_id);
-    xhr.send("get_u " + user_id.trim() + " " + Session.session_id);
+    console.log("get_u " + json_user + " " + Session.session_id);
+    xhr.send("get_u " + json_user + " " + Session.session_id);
 
 }
 function setUser() {
