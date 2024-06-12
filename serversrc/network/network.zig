@@ -5,7 +5,7 @@ const cfg = @import("../configuration.zig");
 const fio = @import("../fullio.zig");
 const alc = @import("../allocator.zig");
 const bst = @import("../buildassets.zig");
-const ssn = @import("../session/session.zig");
+const ssn = @import("../network/session.zig");
 const usr = @import("../database/user.zig");
 const ast = @import("../database/asset.zig");
 const ord = @import("../database/order.zig");
@@ -186,28 +186,41 @@ fn onPOST(r: zap.Request) void {
                 // "get_u" for users
                 // TODO extend either user_id or username
                 if (eql(u8, command, "get_u")) {
-                    // recieve json
-                    std.debug.print("get_u\n", .{});
+                    getTransmitUserPartial(r, body) catch |err| {
+                        transmitError(r, "Error while accessing User Records");
+                        std.log.err("Error while accessing User Records: {!}", .{err});
+                        return;
+                    };
                 }
 
                 // "get_s" for sites
                 // TODO extend Site code, site name, address
                 if (eql(u8, command, "get_s")) {
-                    std.debug.print("get_s\n", .{});
+                    if (split.next()) |site_code|
+                        getTransmitRecord(r, ste.Site, "site_data", "site_id", site_code) catch |err| {
+                            std.log.err("Error occured accessign and transmitting site record: {!}", .{err});
+                            transmitError(r, "Error occured accessign and transmitting site record");
+                            return;
+                        };
                 }
 
                 // "get_o" for orders
                 if (eql(u8, command, "get_o")) {
-                    std.debug.print("get_o\n", .{});
+                    if (split.next()) |order_id|
+                        getTransmitRecord(r, ord.Order, "order_data", "order_id", order_id) catch |err| {
+                            std.log.err("Error occured accessign and transmitting order record: {!}", .{err});
+                            transmitError(r, "Error occured accessign and transmitting order record");
+                            return;
+                        };
                 }
             }
         }
-        r.setStatus(.teapot);
-        r.setHeader("Content-Type", "shoo") catch |err|
-            std.log.err("{!}\n", .{err});
-        r.sendBody("\nshoo\n") catch |err|
-            std.log.err("{!}\n", .{err});
     }
+    r.setStatus(.teapot);
+    r.setHeader("Content-Type", "shoo") catch |err|
+        std.log.err("{!}\n", .{err});
+    r.sendBody("\nshoo\n") catch |err|
+        std.log.err("{!}\n", .{err});
 }
 
 fn onDELETE(r: zap.Request) void {
@@ -273,16 +286,6 @@ fn queryAssetQuantity(r: zap.Request, split: *std.mem.SplitIterator(u8, .scalar)
         try r.sendBody("nomatch");
     }
     return;
-}
-
-pub fn auth(split: *std.mem.SplitIterator(u8, .scalar)) bool {
-    if (split.next()) |autho| {
-        _ = autho;
-        // check autho against existing sessions and user creds.
-        // If mismatch occurs between session and user credentials discard session immediately.
-        return true;
-    }
-    return false;
 }
 
 pub fn transmitError(r: zap.Request, whoops_description: []const u8) void {
@@ -355,5 +358,65 @@ pub fn getTransmitRecord(r: zap.Request, comptime T: type, comptime table: []con
         r.setStatus(.ok);
         try r.setHeader("Content-Type", "application/json");
         try r.sendBody(json);
+    }
+}
+
+fn getTransmitUserPartial(r: zap.Request, body: []const u8) !void {
+    // recieve json
+    // find first and last brackets?
+    const start =
+        start_block: for (body, 0..) |c, i|
+    {
+        if (c == '{') break i else continue :start_block;
+    } else return error.InvalidJSON;
+    const end =
+        end_block: for (0..body.len) |i|
+    {
+        const j = body.len - i;
+        if (body[j - 1] == '}') break j else continue :end_block;
+    } else return error.InvalidJSON;
+    if (start >= 0 and end >= 0) {
+        const U = struct {
+            user_id: []const u8,
+            site_id: []const u8,
+            username: []const u8,
+            password: []const u8,
+            name: []const u8,
+            email: []const u8,
+            phone: []const u8,
+            permission: []const u8,
+        };
+        const u = try std.json.parseFromSlice(
+            U,
+            alc.fba,
+            body[start..end],
+            .{ .max_value_len = 64 },
+        );
+        if (u.value.user_id.len > 0)
+            try getTransmitRecord(
+                r,
+                usr.User,
+                "user_data",
+                "user_id",
+                u.value.user_id,
+            )
+        else if (u.value.username.len > 0)
+            try getTransmitRecord(
+                r,
+                usr.User,
+                "user_data",
+                "username",
+                u.value.username,
+            )
+        else if (u.value.email.len > 0)
+            try getTransmitRecord(
+                r,
+                usr.User,
+                "user_data",
+                "email",
+                u.value.email,
+            );
+    } else {
+        return error.InvalidJSON;
     }
 }

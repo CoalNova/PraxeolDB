@@ -166,6 +166,17 @@ function invQuant() {
 }
 
 
+function clearUserFields() {
+    document.getElementById("user_table_id_field").value = "";
+    document.getElementById("user_table_site_id_field").value = "";
+    document.getElementById("user_table_name_field").value = "";
+    document.getElementById("user_table_username_field").value = "";
+    document.getElementById("user_table_password_field").value = "";
+    document.getElementById("user_table_email_field").value = "";
+    document.getElementById("user_table_phone_field").value = "";
+    document.getElementById("user_table_permissions_field").value = "";
+}
+
 function getUser() {
     
     const xhr = new XMLHttpRequest();
@@ -186,7 +197,7 @@ function getUser() {
                 const j = JSON.parse(xhr.response);
                 
                 // assignment operations return the assignment
-                User.user_id = j.user_id;
+                document.getElementById("user_table_id_field").value = User.user_id = j.user_id;
                 document.getElementById("user_table_site_id_field").value = User.site_id = j.site_id;
                 document.getElementById("user_table_name_field").value = User._name = j.name;
                 document.getElementById("user_table_username_field").value = User.username = j.username;
@@ -203,9 +214,9 @@ function getUser() {
     let json_user = JSON.stringify({
         user_id : user_id,
         site_id : user_site_id,
-        username : user_name,
-        password : user_username,
-        name : user_password,
+        username : user_username,
+        password : user_password,
+        name : user_name,
         email : user_email,
         phone : user_phone,
         permission : user_permissions,
@@ -343,8 +354,6 @@ function delOrder() {
     console.log("delorder");
 
 }
-
-
 
 
 function oPrint(s) {
