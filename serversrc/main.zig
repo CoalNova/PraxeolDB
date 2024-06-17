@@ -8,7 +8,7 @@ const cfg = @import("configuration.zig");
 
 pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+    std.debug.print("Starting PraxeolDB\n", .{});
 
     const config = cfg.getConfig();
     try sdb.init(config);

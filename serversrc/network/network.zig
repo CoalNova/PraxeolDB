@@ -20,8 +20,8 @@ pub fn init(config: cfg.Configuration) !void {
         .on_request = onReception,
         //.public_folder = stc.server_config.data_path,
         .log = true,
-        .max_clients = 100000,
-        .max_body_size = 2048,
+        .max_clients = 1 << 16,
+        .max_body_size = 1 << 16,
         .tls = try zap.Tls.init(.{
             .server_name = if (config.ssl_name) |ssl_name| @ptrCast(ssl_name) else null,
             .public_certificate_file = if (config.ssl_cert_pem) |ssl_cert_pem| @ptrCast(ssl_cert_pem) else null,
@@ -121,19 +121,26 @@ fn onGET(r: zap.Request) void {
 
 /// Function to handle PUT requests, as relates to placing changes and orders
 fn onPUT(r: zap.Request) void {
+    const eql = std.mem.eql;
     if (r.body) |body| {
-        const inv_add = "inv_add";
-        if (std.mem.eql(u8, body, inv_add)) {
-            const str = inv_add.len;
-            var end: usize = 0;
-            start_blk: for (body[str..]) |i| {
-                if (body[i + str] == ' ') {
-                    end = (i + str);
-                    break :start_blk;
-                } else return;
-            }
-            const session_id = body[str..end];
-            _ = ssn.verifySession(session_id);
+        var split = std.mem.splitScalar(u8, body, ' ');
+        if (split.next()) |command| {
+            //add user
+            if (eql(u8, command, "add_u")) {}
+            //update user
+            if (eql(u8, command, "upd_u")) {}
+            //add site
+            if (eql(u8, command, "add_s")) {}
+            //update site
+            if (eql(u8, command, "upd_s")) {}
+            //add asset
+            if (eql(u8, command, "add_a")) {}
+            //update asset
+            if (eql(u8, command, "upd_a")) {}
+            //add order
+            if (eql(u8, command, "add_o")) {}
+            //update order
+            if (eql(u8, command, "upd_o")) {}
         }
     }
 }
@@ -184,7 +191,6 @@ fn onPOST(r: zap.Request) void {
                 }
 
                 // "get_u" for users
-                // TODO extend either user_id or username
                 if (eql(u8, command, "get_u")) {
                     getTransmitUserPartial(r, body) catch |err| {
                         transmitError(r, "Error while accessing User Records");
@@ -265,9 +271,7 @@ fn queryAssetQuantity(r: zap.Request, split: *std.mem.SplitIterator(u8, .scalar)
         try statement.bind(.{ .q = sql.text(asset_code) });
 
         r.setStatus(.ok);
-        r.setHeader("Content-Type", "application/xml") catch |err| {
-            std.log.err("{!}", .{err});
-        };
+        try r.setHeader("Content-Type", "application/xml");
 
         if (try statement.step()) |asset| {
             const asset_count = if (asset.quantity > 0) ((asset.quantity >> 1) + 1) else 0;
@@ -291,10 +295,10 @@ fn queryAssetQuantity(r: zap.Request, split: *std.mem.SplitIterator(u8, .scalar)
 pub fn transmitError(r: zap.Request, whoops_description: []const u8) void {
     r.setStatus(.ok);
     r.setHeader("Content-Type", "text/plain") catch |err| {
-        std.log.err("{!}", .{err});
+        std.log.err("Errort transmission failure: {!}", .{err});
     };
     r.sendBody(whoops_description) catch |err| {
-        std.log.err("{!}", .{err});
+        std.log.err("Errort transmission failure: {!}", .{err});
     };
 }
 
@@ -419,4 +423,17 @@ fn getTransmitUserPartial(r: zap.Request, body: []const u8) !void {
     } else {
         return error.InvalidJSON;
     }
+}
+
+pub fn searchAndGetJSONObject(comptime T: type, string: []const u8, allocator: std.mem.Allocator) !T {
+    //first find bounds of json
+    const start = for (string, 0..) |c, i| {
+        if (c == '{') break i;
+    } else return error.InvalidJSON;
+    const end = for (0..string.len) |i| {
+        const c = string[string.len - (i + 1)];
+        if (c == '}') break i + 1;
+    } else return error.InvalidJSON;
+    //attempt JSON-ification
+    return std.json.parseFromSlice(T, allocator, string[start..end], .{});
 }

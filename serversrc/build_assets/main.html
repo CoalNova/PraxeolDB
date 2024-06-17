@@ -24,6 +24,8 @@
         <button type="button" id="asset_button" onclick="setTab(2)">Asset</button>
         <button type="button" id="order_manage_button" onclick="setTab(3)">Order Management</button>
         <button type="button" id="administration_button" onclick="setTab(4)">Administration</button>
+        <button type="button" id="site_button" onclick="setTab(5)">Order Management</button>
+
 
         <div id="ordering_tab">
             <h4>Ordering</h4>
@@ -70,6 +72,7 @@
             <button type="button">Download Order List as CSV</button>
             <textarea name="Order List" id="order_list_field" style="margin-left: 15%; height: 55%; width: 70%;"></textarea>
         </div>
+
         <div id="admin_tab">
             <h4>User Administration</h4>
             <table>                
@@ -81,41 +84,72 @@
                         Username: <input type="text" name="user_table_username_field" id="user_table_username_field">   
                     </td>
                     <td>
+                        &nbsp;
                         <button type="button" onclick="getUser()">Lookup User</button>
                     </td>
-                    -
                     <td>
+                        &nbsp;
                         <button type="button" onclick="clearUserFields()">Clear</button>
                     </td>
                 </tr>
-            <tr>
-                <td>
-                    Site ID: <input type="text" name="user_table_site_id_field" id="user_table_site_id_field">
-                </td>
-                <td>
-                    Password: <input type="text" name="user_table_password_field" id="user_table_password_field">
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    Name: <input type="text" name="user_table_name_field" id="user_table_name_field">
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    Email: <input type="text" name="user_table_email_field" id="user_table_email_field">
-                </td>
-                <td>
-                    Phone: <input type="text" name="user_table_phone_field" id="user_table_phone_field">
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    Permissions: <input type="text" name="user_table_permissions_field" id="user_table_permissions_field">
-                </td>
-            </tr>
-        </table>
-    </div>
+                <tr>
+                    <td>
+                        Password: <input type="text" name="user_table_password_field" id="user_table_password_field">
+                    </td>
+                    <td>
+                        Site ID: <input type="text" name="user_table_site_id_field" id="user_table_site_id_field">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Name: <input type="text" name="user_table_name_field" id="user_table_name_field">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Email: <input type="text" name="user_table_email_field" id="user_table_email_field">
+                    </td>
+                    <td>
+                        Phone: <input type="text" name="user_table_phone_field" id="user_table_phone_field">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Permissions: <input type="text" name="user_table_permissions_field" id="user_table_permissions_field">
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="site_tab">
+            <h4>Site Management</h4>
+            <table>
+                <tr>
+                    <td>
+                        Site ID: <input type="text" name="site_table_id_field" id="site_table_id_field">                        
+                    </td>
+                    <td>
+                        Title: <input type="text" name="site_table_title_field" id="site_table_title_field">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Address: <input type="text" name="site_table_address_field" id="site_table_address_field">
+                    </td>
+                    <td>
+                        Notes: <input type="text" name="site_table_notes_field" id="site_table_notes_field">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Contact Name: <input type="text" name="site_table_contact_name_field" id="site_table_contact_name_field">
+                    </td>
+                    <td>
+                        Contact Phone: <input type="text" name="site_table_contact_phone_field" id="site_table_ontact_phone_field">
+                    </td>
+                </tr>
+            </table>
+        </div>
         <script src="main.js"></script>
     </body>
 </html>
