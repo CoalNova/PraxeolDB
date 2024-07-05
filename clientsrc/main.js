@@ -186,51 +186,18 @@ function clearUserFields() {
 function getUser() {
     
     const xhr = new XMLHttpRequest();
-    const user_id = document.getElementById("user_table_id_field").value;
-    const user_site_id = document.getElementById("user_table_site_id_field").value;
-    const user_name = document.getElementById("user_table_name_field").value;
-    const user_username = document.getElementById("user_table_username_field").value;
-    const user_password = document.getElementById("user_table_password_field").value;
-    const user_email = document.getElementById("user_table_email_field").value;
-    const user_phone = document.getElementById("user_table_phone_field").value;
-    const user_permissions = document.getElementById("user_table_permissions_field").value;
 
     xhr.onreadystatechange = () => {
         if (xhr.readyState === 4 ) 
             {
-                oPrint(xhr.response);
-                const j = JSON.parse(xhr.response);
-                
+                jsonToUserFields(xhr.response);
                 // assignment operations return the assignment
-                document.getElementById("user_table_id_field").value = User.user_id = j.user_id;
-                document.getElementById("user_table_site_id_field").value = User.site_id = j.site_id;
-                document.getElementById("user_table_name_field").value = User._name = j.name;
-                document.getElementById("user_table_username_field").value = User.username = j.username;
-                document.getElementById("user_table_password_field").value = User.password = j.password;
-                document.getElementById("user_table_email_field").value = User.email = j.email;
-                document.getElementById("user_table_phone_field").value = User.phone = j.phone;
-                document.getElementById("user_table_permissions_field").value = User.permissions = j.permissions;
         }
     };
 
-    const uri_path = "";
-    //oPrint(uri_path);
-    
-    let json_user = JSON.stringify({
-        user_id : user_id,
-        site_id : user_site_id,
-        username : user_username,
-        password : user_password,
-        name : user_name,
-        email : user_email,
-        phone : user_phone,
-        permission : user_permissions,
-    });
-
     xhr.open("POST", null, true);
     xhr.setRequestHeader('Content-Type', 'application/xml');
-    console.log("get_u " + json_user + " " + Session.session_id);
-    xhr.send("get_u " + json_user + " " + Session.session_id);
+    xhr.send("get_u " + userFieldsToJSON() + " " + Session.session_id);
 
 }
 function setUser() {
@@ -252,26 +219,18 @@ function getAsset() {
     const asset_code = document.getElementById("asset_table_code_field").value;
     
     xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4 ) 
-            {
-                oPrint(xhr.response);
-                const j = JSON.parse(xhr.response);
-
-                document.getElementById("asset_table_quant_field").value = j.quantity;
-                document.getElementById("asset_table_desc_field").value = j.desc;
-                document.getElementById("asset_table_manufacture_field").value = j.brand;
-                document.getElementById("asset_table_storage_field").value = j.storage;
+        if (xhr.readyState === 4 ) {
+                jsonToAssetFields(xhr.response);
         }
     };
 
-    const uri_path = "";
-    //oPrint(uri_path);
-    
+    const asset_string = assetFieldsToJSON();
+
     xhr.open("POST", null, true);
     xhr.setRequestHeader('Content-Type', 'application/xml');
-    xhr.send("get_a " + asset_code.trim() + " " + Session.session_id);
+    xhr.send("get_a " + asset_string + " " + Session.session_id);
 }
-function setAsset() {
+function updAsset() {
     console.log("setasset");
 
 }
@@ -289,26 +248,16 @@ function getSite() {
     const asset_code = document.getElementById("asset_table_code_field").value;
     
     xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4 ) 
-            {
-                oPrint(xhr.response);
-                const j = JSON.parse(xhr.response);
-
-                document.getElementById("asset_table_quant_field").value = j.quantity;
-                document.getElementById("asset_table_desc_field").value = j.desc;
-                document.getElementById("asset_table_manufacture_field").value = j.brand;
-                document.getElementById("asset_table_storage_field").value = j.storage;
+        if (xhr.readyState === 4 ) {
+                jsonToSiteFields(xhr.response);
         }
     };
 
-    const uri_path = "";
-    //oPrint(uri_path);
-    
     xhr.open("POST", null, true);
     xhr.setRequestHeader('Content-Type', 'application/xml');
-    xhr.send("get_a " + asset_code.trim() + " " + Session.session_id);
+    xhr.send("get_a " + siteFieldsToJSON() + " " + Session.session_id);
 }
-function setSite() {
+function updSite() {
     console.log("setsite");
 
 }
@@ -324,30 +273,18 @@ function delSite() {
 function getOrder() {
     
     const xhr = new XMLHttpRequest();
-    const asset_code = document.getElementById("asset_table_code_field").value;
-    
     xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4 ) 
-            {
-                oPrint(xhr.response);
-                const j = JSON.parse(xhr.response);
-
-                document.getElementById("asset_table_quant_field").value = j.quantity;
-                document.getElementById("asset_table_desc_field").value = j.desc;
-                document.getElementById("asset_table_manufacture_field").value = j.brand;
-                document.getElementById("asset_table_storage_field").value = j.storage;
+        if (xhr.readyState === 4 ) {
+                jsonToAssetFields();
         }
     };
 
-    const uri_path = "";
-    //oPrint(uri_path);
-    
     xhr.open("POST", null, true);
     xhr.setRequestHeader('Content-Type', 'application/xml');
-    xhr.send("get_a " + asset_code.trim() + " " + Session.session_id);
+    xhr.send("get_a " + assetFieldsToJSON() + " " + Session.session_id);
 
 }
-function setOrder() {
+function updOrder() {
     console.log("setorder");
 
 }
@@ -366,6 +303,8 @@ function oPrint(s) {
     doc_part.value = s + "\n" + doc_part.value;
     if (doc_part.value.len > 200) doc_part.value = doc_part.value.substring(0,180);
 } 
+
+//==================================
 
 //User field and object functions
 
@@ -394,8 +333,8 @@ function flashFieldsToUser() {
 function userFieldsToJSON() {
     flashFieldsToUser();
     return JSON.stringify({
-        user_id : User.user_id,
-        site_id : User.site_id,
+        user_id : (parseInt(User.user_id)) ? parseInt(User.user_id) : 0,
+        site_id : (parseInt(User.site_id)) ? parseInt(User.site_id) : 0,
         username : User.username,
         password : User.password,
         name : User._name,
@@ -442,7 +381,7 @@ function flashFieldsToSite() {
 function siteFieldsToJSON() {
     flashFieldsToSite();
     return JSON.stringify({
-        site_id : Site.site_id,
+        site_id : (parseInt(Site.site_id)) ? parseInt(Site.site_id) : 0,
         title : Site.title,
         address : Site.address,
         notes : Site.notes,
@@ -485,7 +424,7 @@ function assetFieldsToJSON() {
     flashFieldsToAsset();
     return JSON.stringify({
         asset_code : Asset.asset_code,
-        quantity : Asset.quantity,
+        quantity : (parseInt(Asset.quantity))? parseInt(Asset.quantity) : 0 ,
         desc : Asset.desc,
         brand : Asset.brand,
         storage : Asset.storage,
@@ -528,9 +467,9 @@ function flashFieldsToOrder() {
 function orderFieldsToJSON() {
     flashFieldsToOrder();
     return JSON.stringify({
-        order_id : Order.order_id,
-        user_id : Order.user_id,
-        site_id : Order.site_id,
+        order_id :(parseInt(Order.order_id))? parseInt(Order.order_id): 0,
+        user_id : (parseInt(Order.user_id))? parseInt(Order.user_id): 0,
+        site_id : (parseInt(Order.site_id))? parseInt(Order.site_id): 0,
         date : Order.date,
         tracking : Order.tracking,
         courier : Order.courier,

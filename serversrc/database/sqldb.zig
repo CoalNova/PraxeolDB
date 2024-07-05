@@ -9,6 +9,13 @@ const cfg = @import("../configuration.zig");
 const alc = @import("../allocator.zig");
 const tbi = @import("../database/tableinterface.zig");
 
+pub const DBErrors = error{
+    RecordNotFound,
+    TableNotFound,
+    ColumnNotFound,
+    InvalidJSON,
+};
+
 pub var db: sql.Database = undefined;
 
 pub fn init(config: cfg.Configuration) !void {
